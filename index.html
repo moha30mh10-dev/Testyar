@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnswerSheet Pro — Digital Exam Tracking</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { darkMode:'class', theme:{ extend:{ fontFamily:{ sans:['Inter','Vazirmatn','sans-serif'] } } } };
+</script>
+<style type="text/tailwindcss">
+.card{@apply bg-white dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl shadow-sm;}
+.btn{@apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 select-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;}
+.btn-primary{@apply bg-indigo-600 hover:bg-indigo-500 active:scale-[.98] text-white shadow-lg shadow-indigo-600/25;}
+.btn-ghost{@apply bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-200;}
+.btn-danger{@apply bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/20;}
+.btn-success{@apply bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20;}
+.input{@apply w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm;}
+.label{@apply block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider;}
+.badge{@apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold;}
+.nav-item{@apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-700/60 hover:text-indigo-600 dark:hover:text-white transition cursor-pointer;}
+.nav-item.active{@apply bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600;}
+.icon-btn{@apply p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/60 hover:text-indigo-600 dark:hover:text-white transition cursor-pointer;}
+.th{@apply text-start text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 py-2;}
+.td{@apply px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200;}
+.chip{@apply px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition border;}
+.stat-num{@apply text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight;}
+</style>
+<style>
+html{scroll-behavior:smooth}
+body{font-family:'Inter','Vazirmatn',sans-serif;-webkit-font-smoothing:antialiased}
+html[lang=fa] body{font-family:'Vazirmatn','Inter',sans-serif}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#c7d2fe;border-radius:99px;border:2px solid transparent;background-clip:content-box}
+.dark ::-webkit-scrollbar-thumb{background:#475569;border:2px solid transparent;background-clip:content-box}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.anim{animation:fadeUp .35s cubic-bezier(.22,1,.36,1) both}
+.anim-scale{animation:scaleIn .22s cubic-bezier(.22,1,.36,1) both}
+.grad-text{background:linear-gradient(120deg,#6366f1,#a855f7,#ec4899);-webkit-background-clip:text;background-clip:text;color:transparent}
+.blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:.35;pointer-events:none;z-index:-1}
+.opt{display:flex;align-items:center;gap:.85rem;width:100%;padding:.9rem 1rem;border-radius:1rem;border:2px solid;cursor:pointer;transition:all .18s;text-align:start;font-weight:600}
+.opt .bubble{width:2.4rem;height:2.4rem;border-radius:.8rem;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;flex-shrink:0;transition:all .18s}
+.pal{width:2.35rem;height:2.35rem;border-radius:.7rem;font-size:.75rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid transparent;cursor:pointer;transition:all .15s;position:relative}
+.pal:hover{transform:translateY(-2px)}
+.pal .dot{position:absolute;bottom:3px;width:5px;height:5px;border-radius:99px;background:#fbbf24}
+.kopt{width:2.2rem;height:2.2rem;border-radius:.65rem;font-weight:800;font-size:.8rem;border:2px solid;cursor:pointer;transition:all .15s}
+.toast{padding:.8rem 1.1rem;border-radius:.9rem;font-weight:600;font-size:.85rem;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);transform:translateY(12px);opacity:0;transition:all .3s;display:flex;gap:.5rem;align-items:center}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:#059669}.toast.error{background:#e11d48}.toast.info{background:#4f46e5}
+#sidebar{transition:width .25s,transform .3s}
+@media (max-width:1023px){
+ #sidebar{position:fixed;inset-block:0;inset-inline-start:0;z-index:45;width:17rem}
+ html[dir=ltr] #sidebar.closed{transform:translateX(-105%)}
+ html[dir=rtl] #sidebar.closed{transform:translateX(105%)}
+}
+@media (min-width:1024px){
+ #sidebar.mini{width:5.25rem}
+ #sidebar.mini .nav-label,#sidebar.mini .side-extra{display:none}
+ #sidebar.mini .nav-item{justify-content:center;padding:.8rem}
+}
+#printArea{display:none}
+@media print{
+ aside#sidebar,header#topbar,.no-print,#toastRoot,#modalRoot{display:none!important}
+ body{background:#fff!important}
+ main#view{overflow:visible!important;padding:0!important}
+ .card{box-shadow:none!important;border:1px solid #d4d4d8!important;break-inside:avoid}
+ body.print-blank #app{display:none!important}
+ body.print-blank #printArea{display:block!important;color:#000}
+}
+.bs-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 28px;margin-top:14px}
+.bs-row{display:flex;align-items:center;gap:10px;padding:3px 0;border-bottom:1px dotted #bbb}
+.bs-row b{width:28px}
+.bs-b{width:26px;height:26px;border-radius:99px;border:1.6px solid #333;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-inline-end:4px}
+.search-drop{position:absolute;top:calc(100% + 8px);inset-inline:0;z-index:50;max-height:22rem;overflow-y:auto}
+.ring-track{stroke:rgba(148,163,184,.2)}
+.progress-track{@apply bg-slate-200 dark:bg-slate-700;}
+</style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+<div class="blob w-[34rem] h-[34rem] bg-indigo-400 dark:bg-indigo-700 -top-40 -start-40"></div>
+<div class="blob w-[30rem] h-[30rem] bg-fuchsia-300 dark:bg-fuchsia-800 bottom-0 -end-40"></div>
+
+<div id="authScreen"></div>
+
+<div id="app" class="hidden h-screen flex overflow-hidden">
+  <div id="sideOverlay" class="fixed inset-0 bg-black/40 z-40 hidden lg:hidden"></div>
+  <aside id="sidebar" class="closed w-68 lg:w-68 flex-shrink-0 bg-white dark:bg-slate-800/80 backdrop-blur border-e border-slate-200 dark:border-slate-700/60 flex flex-col" style="width:17rem"></aside>
+  <div class="flex-1 flex flex-col min-w-0">
+    <header id="topbar" class="h-16 flex-shrink-0 flex items-center gap-3 px-4 md:px-6 bg-white/80 dark:bg-slate-800/60 backdrop-blur border-b border-slate-200 dark:border-slate-700/60 z-30"></header>
+    <main id="view" class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8"></main>
+  </div>
+</div>
+
+<div id="printArea"></div>
+<div id="modalRoot"></div>
+<div id="toastRoot" class="fixed bottom-5 inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
+
+<script>
+/* ============================================================
+   AnswerSheet Pro — Digital Answer Sheet & Exam Tracking
+   ============================================================ */
+
+// ---------------- I18N ----------------
+const I18N = {
+en:{appName:'AnswerSheet Pro',tagline:'Track every answer. Master every subject.',dashboard:'Dashboard',myBooks:'My Books',subjects:'Subjects',chapters:'Chapters',answerSheets:'Answer Sheets',answerKeys:'Answer Keys',history:'Test History',stats:'Statistics & Reports',analysis:'Weakness Analysis',settings:'Settings',searchPh:'Search books, chapters, tests…',signIn:'Sign In',createAccount:'Create Account',fullName:'Full Name',email:'Email',password:'Password',confirmPassword:'Confirm Password',signOut:'Sign Out',noAccount:"Don't have an account?",haveAccount:'Already have an account?',books:'Books',testsTaken:'Tests Taken',questionsAnswered:'Questions Answered',correct:'Correct',incorrect:'Incorrect',unanswered:'Unanswered',accuracy:'Accuracy',completion:'Completion',score:'Score',avgScore:'Avg Score',timeSpent:'Time Spent',todayActivity:"Today's Activity",performanceTrend:'Performance Trend',answerDistribution:'Answer Distribution',topBooks:'Most Practiced Books',recentTests:'Recent Tests',quickActions:'Quick Actions',continueTest:'Continue Test',startNewTest:'Start New Test',viewAll:'View All',addBook:'Add Book',editBook:'Edit Book',bookTitle:'Book Title',subject:'Subject',gradeLevel:'Grade / Level',author:'Author / Publisher',notes:'Notes',cover:'Cover',uploadImage:'Upload Image',orPickGradient:'Or pick a color',save:'Save',cancel:'Cancel',del:'Delete',edit:'Edit',addChapter:'Add Chapter',chapterTitle:'Chapter Title',addTest:'Add Test',testTitle:'Test Title',numQuestions:'Questions',options:'Options',start:'Start',answerKey:'Answer Key',printSheet:'Print Sheet',question:'Question',markReview:'Mark for Review',marked:'Marked',previous:'Previous',next:'Next',clear:'Clear',submitTest:'Submit Test',answered:'Answered',results:'Results',yourAnswer:'Your Answer',correctAnswer:'Correct Answer',explanation:'Explanation',reviewAnswers:'Review Answers',retake:'Retake Test',practiceMistakes:'Practice Mistakes',print:'Print',regrade:'Regrade',keyEditor:'Answer Key Editor',importCSV:'Import CSV',exportCSV:'Export CSV',negMarking:'Negative Marking',penalty:'Penalty per wrong answer',keyCompleteness:'Key completeness',regradeAttempts:'Regrade Attempts',questionTextOpt:'Question text (optional)',explanationOpt:'Explanation (optional)',date:'Date',test:'Test',book:'Book',chapter:'Chapter',questions:'Questions',actions:'Actions',filters:'Filters',from:'From',to:'To',minAccuracy:'Min Accuracy %',apply:'Apply',reset:'Reset',allBooks:'All Books',period:'Period',today:'Today',last7:'Last 7 Days',thisMonth:'This Month',last30:'Last 30 Days',thisYear:'This Year',last12:'Last 12 Months',custom:'Custom Range',vsPrev:'vs previous period',strongest:'Strongest Chapters',weakest:'Weakest Chapters',byBook:'By Book',weakChapters:'Chapters Needing Review',missedQuestions:'Frequently Missed Questions',subjectFocus:'Subjects Needing Practice',recommendations:'Recommendations',timesMissed:'Times missed',errorRate:'Error rate',practiceFromMistakes:'Create Practice Test from Mistakes',improving:'Improving',declining:'Declining',stable:'Stable',profile:'Profile',appearance:'Appearance',theme:'Theme',light:'Light',dark:'Dark',language:'Language',dataMgmt:'Data Management',exportAll:'Export All Data (JSON)',importAll:'Import Data (JSON)',clearAll:'Clear All Data',deleteAccount:'Delete Account',changePassword:'Change Password',currentPassword:'Current Password',newPassword:'New Password',defaults:'Default Test Settings',shareBook:'Share / Export Book',importBook:'Import Book',noBooksTitle:'No books yet',noBooksMsg:'Create your first book to start building answer sheets and tracking your performance.',loadSample:'Load Sample Book',createFirst:'Create Your First Book',confirmDelBook:'Delete this book with all its chapters, tests and answer keys? Attempts history will be kept.',confirmDelChapter:'Delete this chapter and all its tests?',confirmDelTest:'Delete this test and its answer key?',confirmDelAttempt:'Delete this attempt from history?',confirmClearAll:'This will erase ALL your books, tests and history. Continue?',confirmDelAccount:'Permanently delete your account and all data? This cannot be undone.',saved:'Saved successfully',deleted:'Deleted',welcomeBack:'Welcome back',accountCreated:'Account created — welcome!',invalidCreds:'Invalid email or password',emailExists:'An account with this email already exists',passShort:'Password must be at least 6 characters',passMismatch:'Passwords do not match',fillAll:'Please fill in all required fields',submitConfirm:'Submit this test?',unansweredWarn:'unanswered question(s). Unanswered questions are not counted as wrong.',noKeyErr:'This test has no answer key yet. Add the key before submitting.',emptyTestErr:'This test has 0 questions. Edit the answer key to set questions.',unkeyedNote:'question(s) without a key were excluded from scoring.',testSubmitted:'Test submitted and graded',draftResumed:'Draft restored — continue where you left off',inProgress:'In progress',keyStatus:'Key',attempts:'Attempts',bestAcc:'Best accuracy',lastAcc:'Last accuracy',noAttempts:'No attempts yet',noTests:'No tests yet',noChapters:'No chapters yet',openBook:'Open',tests:'tests',chaptersL:'chapters',questionsL:'questions',practiceSession:'Practice: Mistakes',practice:'Practice',multiple:'Multiple',regraded:'Attempt regraded with current key',keyChanged:'The answer key has changed since this attempt.',regradeAllDone:'attempt(s) regraded',noMistakes:'No mistakes found — great work! Take more tests to build analysis.',notEnoughData:'Not enough data yet. Complete a few tests to unlock analysis.',recommendedNext:'Recommended to review next',basedOnErrors:'based on your highest error rates',trend:'Trend',studyTime:'Study time',testsCompleted:'Tests completed',importKeyHelp:'One per line: question number, answer, optional explanation. Example: 1,B,Because…',parseErr:'No valid rows found. Use format: 1,B or 1,B,explanation',keyImported:'Answer key imported',copyJSON:'Copy JSON',copied:'Copied to clipboard',importSuccess:'Book imported successfully',importErr:'Invalid book file',dataImported:'Data imported successfully',dataExport:'Export',searchResults:'Search Results',noResults:'No results found',globalSearch:'Search',selectTest:'Select a test to start',newAttempt:'New attempt',resumeDraft:'Resume draft',of:'of',min:'min',sec:'sec',hr:'hr',total:'Total',maxScore:'Max score',perQuestion:'Per-question review',status:'Status',all:'All',ok:'OK',close:'Close',back:'Back',optional:'optional',chapterAssign:'Chapter',defaultChapter:'Default (test chapter)',gradedNote:'Accuracy = correct / answered. Score uses your negative-marking rules.',shareHint:'Copy this JSON or download it to share the book (with chapters, tests and keys).',pasteJSON:'Paste book JSON here',import:'Import',passwordChanged:'Password changed',wrongPassword:'Current password is incorrect',profileUpdated:'Profile updated',prefTheme:'Theme and language are saved to your account.',yesDelete:'Yes, delete',yesClear:'Yes, erase everything',hourly:'Hourly activity (today)',dailyQ:'Questions answered per day',accLine:'Accuracy %',questionsBar:'Questions',noDataRange:'No activity in this period',deltaNew:'new',subjectsCount:'Subjects',chaptersCount:'Chapters',printReport:'Print Report',overallProgress:'Overall Progress',generatedOn:'Generated on',student:'Student',blankSheetName:'Name',blankSheetDate:'Date',blankSheetGrade:'Grade',keyWarning:'questions still missing a key',optionsCount:'Options per question',four:'4 (A–D)',five:'5 (A–E)',enableNeg:'Wrong answers reduce score',sampleLoaded:'Sample book loaded — open it and take a test!',keyboardHint:'Tip: use keys A–E to answer, arrows to navigate',time:'Time',dateTime:'Date & Time',viewAttempt:'View',deleteAttempt:'Delete',regradeAttempt:'Regrade',noTestsYet2:'Create a test inside a book chapter first.',quickStart:'Quick Start',continueWhere:'Continue where you left off',allTime:'All time',todayShort:'Today',thisWeek:'This week',avgPerTest:'avg / test',completedTests:'Completed tests',totalQuestions:'Total questions',overallAccuracy:'Overall accuracy',overallScore:'Total score',activityByDay:'Activity',performanceByBook:'Performance by book',distribution:'Distribution',strongWeak:'Strongest & weakest chapters',minAnsweredNote:'Chapters with at least 5 answered questions',errorRateCol:'Error rate',answeredCol:'Answered',accuracyCol:'Accuracy',subjectCol:'Subject',noChapterData:'No chapter data yet',practiceBuilt:'Practice test built from your mistakes',questionFrom:'From',reviewOf:'Review of attempt',submittedAt:'Submitted',startedAt:'Started',duration:'Duration',mode:'Mode',standard:'Standard',practiceMode:'Practice',unkeyedExcluded:'Unkeyed (excluded)',selected:'Selected',notSelected:'Not selected',noExplanation:'No explanation provided.',chapterTag:'Chapter',searchHistory:'Search tests…',exportHistory:'Export history as CSV',rows:'rows',showingUpTo:'Showing up to 200 most recent',regradeAll:'Regrade All',keyCompleteShort:'keyed',editKeyFirst:'Edit key',takeTest:'Take test',printBlank:'Print blank sheet',moveUp:'Move up',moveDown:'Move down',reorder:'Reorder',untitled:'Untitled',general:'General',deletedItem:'Deleted item',unknownChapter:'Unknown chapter',excl:'excl.',cancelled:'Cancelled',areYouSure:'Are you sure?',thisAction:'This action cannot be undone.',language2:'فارسی',english:'English'},
+fa:{appName:'پاسخنامه پرو',tagline:'هر پاسخ را ثبت کنید. هر درس را مسلط شوید.',dashboard:'داشبورد',myBooks:'کتاب‌های من',subjects:'درس‌ها',chapters:'فصل‌ها',answerSheets:'پاسخنامه‌ها',answerKeys:'کلید پاسخ‌ها',history:'تاریخچه آزمون‌ها',stats:'آمار و گزارش‌ها',analysis:'تحلیل نقاط ضعف',settings:'تنظیمات',searchPh:'جستجوی کتاب، فصل، آزمون…',signIn:'ورود',createAccount:'ساخت حساب کاربری',fullName:'نام و نام خانوادگی',email:'ایمیل',password:'رمز عبور',confirmPassword:'تکرار رمز عبور',signOut:'خروج از حساب',noAccount:'حساب کاربری ندارید؟',haveAccount:'قبلاً حساب ساخته‌اید؟',books:'کتاب‌ها',testsTaken:'آزمون‌های انجام‌شده',questionsAnswered:'سؤالات پاسخ‌داده‌شده',correct:'صحیح',incorrect:'نادرست',unanswered:'بدون پاسخ',accuracy:'دقت',completion:'تکمیل',score:'نمره',avgScore:'میانگین نمره',timeSpent:'زمان صرف‌شده',todayActivity:'فعالیت امروز',performanceTrend:'روند عملکرد',answerDistribution:'توزیع پاسخ‌ها',topBooks:'پرتمرین‌ترین کتاب‌ها',recentTests:'آزمون‌های اخیر',quickActions:'دسترسی سریع',continueTest:'ادامه آزمون',startNewTest:'شروع آزمون جدید',viewAll:'مشاهده همه',addBook:'افزودن کتاب',editBook:'ویرایش کتاب',bookTitle:'عنوان کتاب',subject:'درس',gradeLevel:'پایه تحصیلی',author:'نویسنده / ناشر',notes:'یادداشت',cover:'جلد',uploadImage:'بارگذاری تصویر',orPickGradient:'یا یک رنگ انتخاب کنید',save:'ذخیره',cancel:'انصراف',del:'حذف',edit:'ویرایش',addChapter:'افزودن فصل',chapterTitle:'عنوان فصل',addTest:'افزودن آزمون',testTitle:'عنوان آزمون',numQuestions:'تعداد سؤالات',options:'گزینه‌ها',start:'شروع',answerKey:'کلید پاسخ',printSheet:'چاپ پاسخنامه',question:'سؤال',markReview:'علامت‌گذاری برای بازبینی',marked:'علامت‌دار',previous:'قبلی',next:'بعدی',clear:'پاک کردن',submitTest:'ثبت نهایی آزمون',answered:'پاسخ‌داده‌شده',results:'نتایج',yourAnswer:'پاسخ شما',correctAnswer:'پاسخ صحیح',explanation:'توضیح',reviewAnswers:'مرور پاسخ‌ها',retake:'آزمون مجدد',practiceMistakes:'تمرین خطاها',print:'چاپ',regrade:'تصحیح مجدد',keyEditor:'ویرایشگر کلید پاسخ',importCSV:'ورود از CSV',exportCSV:'خروجی CSV',negMarking:'نمره منفی',penalty:'جریمه هر پاسخ نادرست',keyCompleteness:'تکمیل کلید',regradeAttempts:'تصحیح مجدد تلاش‌ها',questionTextOpt:'متن سؤال (اختیاری)',explanationOpt:'توضیح (اختیاری)',date:'تاریخ',test:'آزمون',book:'کتاب',chapter:'فصل',questions:'سؤالات',actions:'عملیات',filters:'فیلترها',from:'از',to:'تا',minAccuracy:'حداقل دقت ٪',apply:'اعمال',reset:'بازنشانی',allBooks:'همه کتاب‌ها',period:'بازه زمانی',today:'امروز',last7:'۷ روز گذشته',thisMonth:'این ماه',last30:'۳۰ روز گذشته',thisYear:'امسال',last12:'۱۲ ماه گذشته',custom:'بازه دلخواه',vsPrev:'نسبت به دوره قبل',strongest:'قوی‌ترین فصل‌ها',weakest:'ضعیف‌ترین فصل‌ها',byBook:'بر اساس کتاب',weakChapters:'فصل‌های نیازمند مرور',missedQuestions:'سؤالات پرخطا',subjectFocus:'درس‌های نیازمند تمرین',recommendations:'پیشنهادها',timesMissed:'دفعات خطا',errorRate:'نرخ خطا',practiceFromMistakes:'ساخت آزمون تمرینی از خطاها',improving:'رو به بهبود',declining:'رو به کاهش',stable:'پایدار',profile:'پروفایل',appearance:'ظاهر',theme:'پوسته',light:'روشن',dark:'تیره',language:'زبان',dataMgmt:'مدیریت داده‌ها',exportAll:'خروجی کامل داده‌ها (JSON)',importAll:'ورود داده‌ها (JSON)',clearAll:'پاک‌سازی همه داده‌ها',deleteAccount:'حذف حساب کاربری',changePassword:'تغییر رمز عبور',currentPassword:'رمز فعلی',newPassword:'رمز جدید',defaults:'تنظیمات پیش‌فرض آزمون',shareBook:'اشتراک‌گذاری / خروجی کتاب',importBook:'ورود کتاب',noBooksTitle:'هنوز کتابی ندارید',noBooksMsg:'اولین کتاب خود را بسازید تا پاسخنامه بسازید و پیشرفتتان را پیگیری کنید.',loadSample:'بارگذاری کتاب نمونه',createFirst:'ساخت اولین کتاب',confirmDelBook:'این کتاب با همه فصل‌ها، آزمون‌ها و کلیدهایش حذف شود؟ تاریخچه تلاش‌ها باقی می‌ماند.',confirmDelChapter:'این فصل و همه آزمون‌هایش حذف شود؟',confirmDelTest:'این آزمون و کلید پاسخش حذف شود؟',confirmDelAttempt:'این تلاش از تاریخچه حذف شود؟',confirmClearAll:'همه کتاب‌ها، آزمون‌ها و تاریخچه شما پاک می‌شود. ادامه می‌دهید؟',confirmDelAccount:'حساب کاربری و همه داده‌ها برای همیشه حذف شود؟ این کار قابل بازگشت نیست.',saved:'با موفقیت ذخیره شد',deleted:'حذف شد',welcomeBack:'خوش آمدید',accountCreated:'حساب ساخته شد — خوش آمدید!',invalidCreds:'ایمیل یا رمز عبور اشتباه است',emailExists:'حسابی با این ایمیل وجود دارد',passShort:'رمز عبور باید حداقل ۶ کاراکتر باشد',passMismatch:'رمزها یکسان نیستند',fillAll:'لطفاً همه فیلدهای ضروری را پر کنید',submitConfirm:'آزمون ثبت نهایی شود؟',unansweredWarn:'سؤال بدون پاسخ. سؤالات بدون پاسخ نادرست محسوب نمی‌شوند.',noKeyErr:'این آزمون هنوز کلید پاسخ ندارد. ابتدا کلید را وارد کنید.',emptyTestErr:'این آزمون ۰ سؤال دارد. از ویرایشگر کلید، سؤال اضافه کنید.',unkeyedNote:'سؤال بدون کلید از نمره‌دهی کنار گذاشته شد.',testSubmitted:'آزمون ثبت و تصحیح شد',draftResumed:'پیش‌نویس بازیابی شد — ادامه دهید',inProgress:'در حال انجام',keyStatus:'کلید',attempts:'تلاش‌ها',bestAcc:'بهترین دقت',lastAcc:'آخرین دقت',noAttempts:'هنوز تلاشی ثبت نشده',noTests:'هنوز آزمونی نیست',noChapters:'هنوز فصلی نیست',openBook:'باز کردن',tests:'آزمون',chaptersL:'فصل',questionsL:'سؤال',practiceSession:'تمرین: خطاها',practice:'تمرینی',multiple:'چندگانه',regraded:'تلاش با کلید فعلی دوباره تصحیح شد',keyChanged:'کلید پاسخ پس از این تلاش تغییر کرده است.',regradeAllDone:'تلاش دوباره تصحیح شد',noMistakes:'خطایی یافت نشد — آفرین! برای تحلیل بیشتر آزمون بدهید.',notEnoughData:'داده کافی نیست. چند آزمون انجام دهید تا تحلیل فعال شود.',recommendedNext:'پیشنهاد مرور بعدی',basedOnErrors:'بر اساس بیشترین نرخ خطای شما',trend:'روند',studyTime:'زمان مطالعه',testsCompleted:'آزمون‌های تکمیل‌شده',importKeyHelp:'در هر خط: شماره سؤال، پاسخ، توضیح اختیاری. مثال: 1,B,چون…',parseErr:'سطر معتبری یافت نشد. قالب: 1,B یا 1,B,توضیح',keyImported:'کلید پاسخ وارد شد',copyJSON:'کپی JSON',copied:'در حافظه کپی شد',importSuccess:'کتاب با موفقیت وارد شد',importErr:'فایل کتاب معتبر نیست',dataImported:'داده‌ها با موفقیت وارد شد',dataExport:'خروجی',searchResults:'نتایج جستجو',noResults:'نتیجه‌ای یافت نشد',globalSearch:'جستجو',selectTest:'یک آزمون را برای شروع انتخاب کنید',newAttempt:'تلاش جدید',resumeDraft:'ادامه پیش‌نویس',of:'از',min:'دقیقه',sec:'ثانیه',hr:'ساعت',total:'مجموع',maxScore:'نمره کل',perQuestion:'مرور سؤال‌به‌سؤال',status:'وضعیت',all:'همه',ok:'باشه',close:'بستن',back:'بازگشت',optional:'اختیاری',chapterAssign:'فصل',defaultChapter:'پیش‌فرض (فصل آزمون)',gradedNote:'دقت = صحیح ÷ پاسخ‌داده‌شده. نمره با قانون نمره منفی محاسبه می‌شود.',shareHint:'این JSON را کپی یا دانلود کنید تا کتاب (با فصل‌ها، آزمون‌ها و کلیدها) را به اشتراک بگذارید.',pasteJSON:'JSON کتاب را اینجا بچسبانید',import:'ورود',passwordChanged:'رمز عبور تغییر کرد',wrongPassword:'رمز فعلی اشتباه است',profileUpdated:'پروفایل به‌روز شد',prefTheme:'پوسته و زبان در حساب شما ذخیره می‌شود.',yesDelete:'بله، حذف کن',yesClear:'بله، همه را پاک کن',hourly:'فعالیت ساعتی (امروز)',dailyQ:'سؤالات پاسخ‌داده‌شده در روز',accLine:'دقت ٪',questionsBar:'سؤالات',noDataRange:'فعالیتی در این بازه نیست',deltaNew:'جدید',subjectsCount:'درس‌ها',chaptersCount:'فصل‌ها',printReport:'چاپ گزارش',overallProgress:'پیشرفت کلی',generatedOn:'تاریخ صدور',student:'دانش‌آموز',blankSheetName:'نام',blankSheetDate:'تاریخ',blankSheetGrade:'پایه',keyWarning:'سؤال هنوز کلید ندارد',optionsCount:'تعداد گزینه‌ها',four:'۴ (A–D)',five:'۵ (A–E)',enableNeg:'پاسخ نادرست نمره را کم کند',sampleLoaded:'کتاب نمونه بارگذاری شد — بازش کنید و آزمون بدهید!',keyboardHint:'نکته: با کلیدهای A–E پاسخ دهید و با جهت‌ها جابه‌جا شوید',time:'زمان',dateTime:'تاریخ و ساعت',viewAttempt:'مشاهده',deleteAttempt:'حذف',regradeAttempt:'تصحیح مجدد',noTestsYet2:'ابتدا داخل فصل یک کتاب، آزمون بسازید.',quickStart:'شروع سریع',continueWhere:'از جایی که مانده بودید ادامه دهید',allTime:'از ابتدا',todayShort:'امروز',thisWeek:'این هفته',avgPerTest:'میانگین / آزمون',completedTests:'آزمون‌های تکمیل‌شده',totalQuestions:'کل سؤالات',overallAccuracy:'دقت کلی',overallScore:'نمره کل',activityByDay:'فعالیت',performanceByBook:'عملکرد بر اساس کتاب',distribution:'توزیع',strongWeak:'قوی‌ترین و ضعیف‌ترین فصل‌ها',minAnsweredNote:'فصل‌هایی با حداقل ۵ پاسخ',errorRateCol:'نرخ خطا',answeredCol:'پاسخ',accuracyCol:'دقت',subjectCol:'درس',noChapterData:'داده‌ای برای فصل نیست',practiceBuilt:'آزمون تمرینی از خطاهای شما ساخته شد',questionFrom:'منبع',reviewOf:'مرور تلاش',submittedAt:'ثبت شده',startedAt:'شروع',duration:'مدت',mode:'نوع',standard:'استاندارد',practiceMode:'تمرینی',unkeyedExcluded:'بدون کلید (کنار گذاشته شد)',selected:'انتخاب‌شده',notSelected:'انتخاب نشده',noExplanation:'توضیحی ثبت نشده است.',chapterTag:'فصل',searchHistory:'جستجوی آزمون…',exportHistory:'خروجی CSV تاریخچه',rows:'سطر',showingUpTo:'نمایش حداکثر ۲۰۰ مورد اخیر',regradeAll:'تصحیح مجدد همه',keyCompleteShort:'کلیددار',editKeyFirst:'ویرایش کلید',takeTest:'شروع آزمون',printBlank:'چاپ برگه پاسخ',moveUp:'بالا',moveDown:'پایین',reorder:'مرتب‌سازی',untitled:'بدون عنوان',general:'عمومی',deletedItem:'مورد حذف‌شده',unknownChapter:'فصل ناشناخته',excl:'کنار',cancelled:'لغو شد',areYouSure:'مطمئن هستید؟',thisAction:'این کار قابل بازگشت نیست.',language2:'فارسی',english:'English'}
+};
+let LANG = 'en';
+function t(k){ return (I18N[LANG] && I18N[LANG][k]!==undefined) ? I18N[LANG][k] : (I18N.en[k]!==undefined?I18N.en[k]:k); }
+
+// ---------------- Utils ----------------
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,9);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const LETTERS = n => 'ABCDE'.slice(0,n).split('');
+function dnum(n){ n=String(n); if(LANG==='fa') n=n.replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[+d]); return n; }
+function pct(x,dec=1){ const v=(Math.round((x||0)*10**dec)/10**dec); return dnum(v)+(LANG==='fa'?'٪':'%'); }
+function fmtScore(x){ const v=Math.round((x||0)*100)/100; return dnum(Number.isInteger(v)?v:v.toFixed(2)); }
+function fmtDate(ts){ try{return new Intl.DateTimeFormat(LANG==='fa'?'fa-IR':'en-US',{year:'numeric',month:'short',day:'numeric'}).format(new Date(ts));}catch(e){return new Date(ts).toLocaleDateString();} }
+function fmtDT(ts){ try{return new Intl.DateTimeFormat(LANG==='fa'?'fa-IR':'en-US',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(ts));}catch(e){return new Date(ts).toLocaleString();} }
+function fmtDur(sec){ sec=Math.round(sec||0); const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
+ if(h) return dnum(h)+' '+t('hr')+' '+dnum(m)+' '+t('min'); if(m) return dnum(m)+' '+t('min')+' '+dnum(s)+' '+t('sec'); return dnum(s)+' '+t('sec'); }
+function fmtClock(sec){ sec=Math.floor(sec); const h=String(Math.floor(sec/3600)).padStart(2,'0'),m=String(Math.floor(sec%3600/60)).padStart(2,'0'),s=String(sec%60).padStart(2,'0'); return dnum(`${h}:${m}:${s}`); }
+function dayKey(ts){ const d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function startOfDay(ts){ const d=new Date(ts); d.setHours(0,0,0,0); return d.getTime(); }
+function accColor(a){ return a>=80?'text-emerald-500':a>=60?'text-amber-500':'text-rose-500'; }
+function accBadge(a){ const c=a>=80?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400':a>=60?'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400'; return `<span class="badge ${c}">${pct(a)}</span>`; }
+function downloadFile(name, content, mime='text/plain'){ const b=new Blob([content],{type:mime+';charset=utf-8'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),800); }
+function cyrb53(str,seed=7){let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0,ch;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (h2>>>0).toString(16)+(h1>>>0).toString(16);}
+async function hash(str){ try{ if(window.crypto&&crypto.subtle){ const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str)); return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join(''); } }catch(e){} return cyrb53(str); }
+
+// ---------------- Icons ----------------
+const IC={
+grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4a2 2 0 0 0-2-2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+beaker:'<path d="M9 3h6M10 3v6L4.5 18a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 14h9"/>',
+bookmark:'<path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/>',
+doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/>',
+key:'<circle cx="7.5" cy="15.5" r="4.5"/><path d="m11 12 9-9M17 5l3 3M14 8l2 2"/>',
+clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+chart:'<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12" y="8" width="3" height="10" rx="1"/><rect x="17" y="5" width="3" height="13" rx="1"/>',
+pulse:'<path d="M3 17l5-9 4 6 3-4 6 7"/><path d="M3 21h18"/>',
+cog:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>',
+menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+x:'<path d="M18 6 6 18M6 6l12 12"/>',
+plus:'<path d="M12 5v14M5 12h14"/>',
+pencil:'<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
+trash:'<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+printer:'<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
+chevL:'<path d="m15 18-6-6 6-6"/>',chevR:'<path d="m9 18 6-6-6-6"/>',chevU:'<path d="m18 15-6-6-6 6"/>',chevD:'<path d="m6 9 6 6 6-6"/>',
+share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
+logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+play:'<polygon points="6 3 20 12 6 21 6 3"/>',
+check:'<path d="M20 6 9 17l-5-5"/>',
+refresh:'<path d="M3 12a9 9 0 0 1 15.5-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.4L3 16M3 21v-5h5"/>',
+user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+alert:'<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+copy:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+layers:'<path d="m12 2 10 5.5-10 5.5L2 7.5z"/><path d="m2 12.5 10 5.5 10-5.5"/><path d="m2 17.5 10 5.5 10-5.5"/>'};
+function icon(n,cls='w-5 h-5'){ return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[n]||''}</svg>`; }
+
+// ---------------- Storage ----------------
+const DB={ read(k,f){ try{ const v=localStorage.getItem(k); return v==null?f:JSON.parse(v);}catch(e){return f;} }, write(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){toast('Storage error','error');} }, remove(k){ localStorage.removeItem(k); } };
+let U=null, D=null;
+function loadData(){ D=DB.read('das_data_'+U.id,null)||{books:[],attempts:[],drafts:{}}; D.books=D.books||[];D.attempts=D.attempts||[];D.drafts=D.drafts||{}; }
+function saveData(){ DB.write('das_data_'+U.id,D); }
+function getSettings(){ return U.settings||(U.settings={theme:'light',lang:'en',negDefault:false,penaltyDefault:0.25}); }
+function saveUsers(){ DB.write('das_users',DB.read('das_users',{})); }
+
+// ---------------- Domain helpers ----------------
+function findBook(bid){ return D.books.find(b=>b.id===bid)||null; }
+function findTest(testId){ for(const b of D.books) for(const c of (b.chapters||[])) for(const tt of (c.tests||[])) if(tt.id===testId) return {book:b,chapter:c,test:tt}; return null; }
+function findChapter(cid){ for(const b of D.books) for(const c of (b.chapters||[])) if(c.id===cid) return {book:b,chapter:c}; return null; }
+function bookQuestionCount(b){ return (b.chapters||[]).reduce((s,c)=>s+(c.tests||[]).reduce((x,tt)=>x+(tt.questionCount||0),0),0); }
+function bookTestCount(b){ return (b.chapters||[]).reduce((s,c)=>s+(c.tests||[]).length,0); }
+function keyCount(test){ return Object.keys(test.key||{}).length; }
+function allTests(){ const out=[]; for(const b of D.books) for(const c of (b.chapters||[])) for(const tt of (c.tests||[])) out.push({book:b,chapter:c,test:tt}); return out; }
+function uniqueSubjects(){ return [...new Set(D.books.map(b=>(b.subject||'').trim()).filter(Boolean))]; }
+function attemptsForBook(bid){ return D.attempts.filter(a=>a.bookId===bid); }
+function attemptsForTest(tid){ return D.attempts.filter(a=>a.testId===tid); }
+function aggregate(list){ const r={tests:list.length,total:0,correct:0,incorrect:0,unanswered:0,answered:0,time:0,score:0,accuracy:0,completion:0,avgScore:0};
+ for(const a of list){ const x=a.results||{}; r.total+=x.total||0; r.correct+=x.correct||0; r.incorrect+=x.incorrect||0; r.unanswered+=x.unanswered||0; r.time+=a.timeSpent||0; r.score+=x.score||0; }
+ r.answered=r.correct+r.incorrect; r.accuracy=r.answered===0?0:r.correct/r.answered*100; r.completion=r.total===0?0:r.answered/r.total*100; r.avgScore=r.tests?r.score/r.tests:0; return r; }
+function gradeCompute(answers,key,total,scoring){ let correct=0,incorrect=0,unanswered=0,unkeyed=0; const detail={};
+ for(let i=1;i<=total;i++){ const a=answers[i];
+  if(!key[i]){ detail[i]='unanswered'; unanswered++; if(a) unkeyed++; continue; }
+  if(a==null||a===''){ detail[i]='unanswered'; unanswered++; }
+  else if(key[i]===a){ detail[i]='correct'; correct++; }
+  else { detail[i]='incorrect'; incorrect++; } }
+ const answered=correct+incorrect; const accuracy=answered===0?0:correct/answered*100; const completion=total===0?0:answered/total*100;
+ let score=correct; if(scoring&&scoring.negative){ score=correct-incorrect*(Number(scoring.penalty)||0); }
+ return {detail,unkeyed,results:{total,correct,incorrect,unanswered,answered,accuracy,completion,score,maxScore:total}}; }
+function chapterAgg(list){ const m={};
+ for(const a of list){ const det=a.detail||{}; for(const q in det){ const cid=(a.qChapters&&a.qChapters[q])||a.chapterId||'__none'; (m[cid]=m[cid]||{correct:0,incorrect:0,unanswered:0})[det[q]]++; } } return m; }
+function chapterName(cid){ const f=findChapter(cid); return f?{name:f.chapter.title,book:f.book.title,subject:f.book.subject}:null; }
+
+// ---------------- Toast & Modal ----------------
+function toast(msg,type='success'){ const el=document.createElement('div'); el.className='toast '+type; el.innerHTML=icon(type==='error'?'alert':type==='info'?'flag':'check','w-4 h-4')+esc(msg); $('#toastRoot').appendChild(el); requestAnimationFrame(()=>el.classList.add('show')); setTimeout(()=>{el.classList.remove('show'); setTimeout(()=>el.remove(),350);},3200); }
+function openModal(html,wide){ const root=$('#modalRoot'); root.innerHTML=`<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"><div class="card w-full ${wide?'max-w-3xl':'max-w-md'} max-h-[90vh] overflow-y-auto p-6 anim-scale">${html}</div></div>`; const bg=root.firstElementChild; bg.addEventListener('mousedown',e=>{ if(e.target===bg) closeModal(); }); return bg; }
+function closeModal(){ $('#modalRoot').innerHTML=''; }
+function confirmDialog(title,msg,okLabel,danger=true){ return new Promise(res=>{ const m=openModal(`<div class="text-center"><div class="w-14 h-14 mx-auto rounded-2xl ${danger?'bg-rose-100 dark:bg-rose-500/15 text-rose-500':'bg-indigo-100 dark:bg-indigo-500/15 text-indigo-500'} flex items-center justify-center mb-4">${icon(danger?'alert':'check','w-7 h-7')}</div><h3 class="text-lg font-extrabold mb-2">${esc(title)}</h3><p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">${esc(msg)}</p><div class="flex gap-3 justify-center mt-6"><button id="cfNo" class="btn btn-ghost">${t('cancel')}</button><button id="cfYes" class="btn ${danger?'btn-danger':'btn-primary'}">${esc(okLabel||t('ok'))}</button></div></div>`); m.querySelector('#cfNo').onclick=()=>{closeModal();res(false);}; m.querySelector('#cfYes').onclick=()=>{closeModal();res(true);}; }); }
+
+// ---------------- Auth ----------------
+function showAuth(){ $('#app').classList.add('hidden'); $('#authScreen').classList.remove('hidden'); renderAuth('login'); }
+function renderAuth(mode){ const s=$('#authScreen'); s.innerHTML=`
+<div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+ <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500"></div>
+ <div class="absolute w-96 h-96 bg-white/10 rounded-full -top-20 -start-20 blur-2xl"></div>
+ <div class="absolute w-80 h-80 bg-white/10 rounded-full bottom-0 -end-10 blur-2xl"></div>
+ <div class="card w-full max-w-md p-8 relative anim-scale !rounded-3xl">
+  <div class="flex items-center gap-3 mb-2">
+   <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-fuchsia-500 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">${icon('doc','w-6 h-6')}</div>
+   <div><h1 class="text-xl font-extrabold">${t('appName')}</h1><p class="text-xs text-slate-400">${t('tagline')}</p></div>
+  </div>
+  <div class="flex bg-slate-100 dark:bg-slate-900/60 rounded-xl p-1 my-5">
+   <button data-m="login" class="flex-1 py-2 rounded-lg text-sm font-bold transition ${mode==='login'?'bg-white dark:bg-slate-700 shadow text-indigo-600 dark:text-white':'text-slate-500'}">${t('signIn')}</button>
+   <button data-m="register" class="flex-1 py-2 rounded-lg text-sm font-bold transition ${mode==='register'?'bg-white dark:bg-slate-700 shadow text-indigo-600 dark:text-white':'text-slate-500'}">${t('createAccount')}</button>
+  </div>
+  <div id="authErr" class="hidden mb-3 text-sm font-semibold text-rose-500 bg-rose-50 dark:bg-rose-500/10 rounded-xl px-3 py-2"></div>
+  ${mode==='register'?`<div class="mb-3"><label class="label">${t('fullName')}</label><input id="aName" class="input" autocomplete="name"></div>`:''}
+  <div class="mb-3"><label class="label">${t('email')}</label><input id="aEmail" type="email" class="input" autocomplete="email" dir="ltr"></div>
+  <div class="mb-3"><label class="label">${t('password')}</label><input id="aPass" type="password" class="input" autocomplete="${mode==='login'?'current-password':'new-password'}" dir="ltr"></div>
+  ${mode==='register'?`<div class="mb-3"><label class="label">${t('confirmPassword')}</label><input id="aPass2" type="password" class="input" dir="ltr"></div>`:''}
+  <button id="aGo" class="btn btn-primary w-full mt-2 !py-3">${mode==='login'?t('signIn'):t('createAccount')}</button>
+  <div class="flex items-center justify-center gap-2 mt-5">
+   <button id="aTheme" class="icon-btn" title="${t('theme')}">${icon(document.documentElement.classList.contains('dark')?'sun':'moon')}</button>
+   <button id="aLang" class="btn btn-ghost !px-3 !py-1.5 text-xs">${LANG==='en'?'فارسی':'English'}</button>
+  </div>
+ </div>
+</div>`;
+ s.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>renderAuth(b.dataset.m));
+ $('#aTheme').onclick=()=>{ const p=DB.read('das_prefs',{theme:'light',lang:LANG}); p.theme=document.documentElement.classList.contains('dark')?'light':'dark'; DB.write('das_prefs',p); applyTheme(p.theme); renderAuth(mode); };
+ $('#aLang').onclick=()=>{ const p=DB.read('das_prefs',{theme:'light',lang:'en'}); p.lang=LANG==='en'?'fa':'en'; DB.write('das_prefs',p); LANG=p.lang; applyLang(); renderAuth(mode); };
+ $('#aGo').onclick=()=>mode==='login'?doLogin():doRegister();
+ s.addEventListener('keydown',e=>{ if(e.key==='Enter'){ mode==='login'?doLogin():doRegister(); } });
+}
+function authErr(msg){ const e=$('#authErr'); e.textContent=msg; e.classList.remove('hidden'); }
+async function doLogin(){ const email=$('#aEmail').value.trim().toLowerCase(), pass=$('#aPass').value; if(!email||!pass) return authErr(t('fillAll'));
+ const btn=$('#aGo'); btn.disabled=true; btn.innerHTML='<span class="animate-pulse">…</span>';
+ const users=DB.read('das_users',{}); const u=Object.values(users).find(x=>x.email===email); const h=await hash(pass);
+ btn.disabled=false; btn.textContent=t('signIn');
+ if(!u||u.pass!==h) return authErr(t('invalidCreds'));
+ U=u; DB.write('das_session',u.id); initApp(); toast(t('welcomeBack')+', '+u.name,'info'); }
+async function doRegister(){ const name=$('#aName').value.trim(), email=$('#aEmail').value.trim().toLowerCase(), p1=$('#aPass').value, p2=$('#aPass2').value;
+ if(!name||!email||!p1) return authErr(t('fillAll')); if(p1.length<6) return authErr(t('passShort')); if(p1!==p2) return authErr(t('passMismatch'));
+ const users=DB.read('das_users',{}); if(Object.values(users).some(x=>x.email===email)) return authErr(t('emailExists'));
+ const btn=$('#aGo'); btn.disabled=true;
+ const id=uid(); users[id]={id,name,email,pass:await hash(p1),createdAt:Date.now(),settings:{theme:document.documentElement.classList.contains('dark')?'dark':'light',lang:LANG,negDefault:false,penaltyDefault:0.25}};
+ DB.write('das_users',users); DB.write('das_data_'+id,{books:[],attempts:[],drafts:{}}); DB.write('das_session',id);
+ U=users[id]; initApp(); toast(t('accountCreated'),'success'); }
+function logout(){ DB.remove('das_session'); U=null;D=null;TS=null; showAuth(); }
+function initApp(){ loadData(); const st=getSettings(); LANG=st.lang||'en'; applyLang(); applyTheme(st.theme); $('#authScreen').classList.add('hidden'); $('#app').classList.remove('hidden'); renderSidebar(); renderTopbar(); if(!location.hash) location.hash='#/dashboard'; route(); }
+function applyTheme(th){ document.documentElement.classList.toggle('dark',th==='dark'); }
+function applyLang(){ document.documentElement.lang=LANG; document.documentElement.dir=LANG==='fa'?'rtl':'ltr'; }
+
+// ---------------- Shell ----------------
+const NAV=[['/dashboard','grid','dashboard'],['/books','book','myBooks'],['/subjects','beaker','subjects'],['/chapters','bookmark','chapters'],['/sheets','doc','answerSheets'],['/keys','key','answerKeys'],['/history','clock','history'],['/stats','chart','stats'],['/analysis','pulse','analysis'],['/settings','cog','settings']];
+let sideMini=false;
+function renderSidebar(){ const sb=$('#sidebar'); const cur=(location.hash.slice(1)||'/dashboard');
+ sb.innerHTML=`
+ <div class="h-16 flex items-center gap-3 px-4 border-b border-slate-200 dark:border-slate-700/60 flex-shrink-0">
+  <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-fuchsia-500 flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-indigo-600/25">${icon('doc','w-5 h-5')}</div>
+  <span class="nav-label font-extrabold text-base whitespace-nowrap grad-text">${t('appName')}</span>
+ </div>
+ <nav class="flex-1 overflow-y-auto p-3 space-y-1">${NAV.map(n=>`<div class="nav-item ${cur.startsWith(n[0])?'active':''}" data-nav="${n[0]}" title="${t(n[2])}">${icon(n[1],'w-5 h-5 flex-shrink-0')}<span class="nav-label whitespace-nowrap">${t(n[2])}</span></div>`).join('')}</nav>
+ <div class="p-3 border-t border-slate-200 dark:border-slate-700/60 flex-shrink-0">
+  <div class="flex items-center gap-3 px-2">
+   <div class="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 flex items-center justify-center font-extrabold flex-shrink-0">${esc((U.name||'?').charAt(0).toUpperCase())}</div>
+   <div class="nav-label min-w-0 flex-1"><div class="text-sm font-bold truncate">${esc(U.name)}</div><div class="text-xs text-slate-400 truncate" dir="ltr">${esc(U.email)}</div></div>
+   <button id="sideLogout" class="icon-btn side-extra flex-shrink-0" title="${t('signOut')}">${icon('logout','w-5 h-5')}</button>
+  </div>
+ </div>`;
+ sb.querySelectorAll('[data-nav]').forEach(el=>el.onclick=()=>{ nav(el.dataset.nav); closeMobileSide(); });
+ $('#sideLogout').onclick=logout;
+}
+function renderTopbar(){ const tb=$('#topbar'); tb.innerHTML=`
+ <button id="tbMenu" class="icon-btn lg:hidden">${icon('menu')}</button>
+ <button id="tbMini" class="icon-btn hidden lg:inline-flex">${icon('menu')}</button>
+ <h2 id="tbTitle" class="text-lg font-extrabold truncate"></h2>
+ <div class="flex-1"></div>
+ <div class="relative w-40 sm:w-64 md:w-80 no-print">
+  <span class="absolute top-1/2 -translate-y-1/2 start-3 text-slate-400">${icon('search','w-4 h-4')}</span>
+  <input id="gSearch" class="input !ps-9 !py-2" placeholder="${t('searchPh')}">
+  <div id="gDrop" class="search-drop card p-2 hidden"></div>
+ </div>
+ <button id="tbLang" class="btn btn-ghost !px-3 !py-2 text-xs font-extrabold no-print">${LANG==='en'?'فا':'EN'}</button>
+ <button id="tbTheme" class="icon-btn no-print">${icon(document.documentElement.classList.contains('dark')?'sun':'moon')}</button>`;
+ $('#tbMenu').onclick=()=>{ $('#sidebar').classList.remove('closed'); $('#sideOverlay').classList.remove('hidden'); };
+ $('#tbMini').onclick=()=>{ sideMini=!sideMini; $('#sidebar').classList.toggle('mini',sideMini); };
+ $('#tbTheme').onclick=()=>{ const st=getSettings(); st.theme=st.theme==='dark'?'light':'dark'; saveUsers(); applyTheme(st.theme); renderTopbar(); route(); };
+ $('#tbLang').onclick=()=>{ const st=getSettings(); st.lang=LANG==='en'?'fa':'en'; LANG=st.lang; saveUsers(); applyLang(); renderSidebar(); renderTopbar(); route(); };
+ const gs=$('#gSearch'); gs.addEventListener('input',()=>globalSearch(gs.value)); gs.addEventListener('focus',()=>{ if(gs.value.trim().length>=2) globalSearch(gs.value); });
+ document.addEventListener('click',e=>{ const d=$('#gDrop'); if(d&&!d.contains(e.target)&&e.target!==gs) d.classList.add('hidden'); });
+}
+function closeMobileSide(){ $('#sidebar').classList.add('closed'); $('#sideOverlay').classList.add('hidden'); }
+$('#sideOverlay').onclick=closeMobileSide;
+function setTitle(txt){ const el=$('#tbTitle'); if(el) el.textContent=txt; }
+function globalSearch(q){ const d=$('#gDrop'); q=q.trim().toLowerCase(); if(q.length<2){ d.classList.add('hidden'); return; }
+ const res=[];
+ for(const b of D.books){ if((b.title+' '+(b.subject||'')).toLowerCase().includes(q)) res.push({type:t('book'),label:b.title,sub:b.subject||'',go:"nav('/book/"+b.id+"')"}); 
+  for(const c of (b.chapters||[])){ if(c.title.toLowerCase().includes(q)) res.push({type:t('chapter'),label:c.title,sub:b.title,go:"nav('/book/"+b.id+"')"});
+   for(const tt of (c.tests||[])) if(tt.title.toLowerCase().includes(q)) res.push({type:t('test'),label:tt.title,sub:b.title+' • '+c.title,go:"nav('/test/"+tt.id+"')"}); } }
+ d.innerHTML=res.length? res.slice(0,12).map(r=>`<div class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-700/60 cursor-pointer" onclick="hideSearch();${r.go}"><span class="badge bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">${r.type}</span><div class="min-w-0"><div class="text-sm font-bold truncate">${esc(r.label)}</div><div class="text-xs text-slate-400 truncate">${esc(r.sub)}</div></div></div>`).join('') : `<div class="p-4 text-sm text-slate-400 text-center">${t('noResults')}</div>`;
+ d.classList.remove('hidden'); }
+function hideSearch(){ const d=$('#gDrop'); if(d) d.classList.add('hidden'); const g=$('#gSearch'); if(g) g.value=''; }
+
+// ---------------- Router ----------------
+let charts=[];
+function makeChart(id,cfg){ if(!window.Chart) return null; try{ const el=document.getElementById(id); if(!el) return null; const c=new Chart(el,cfg); charts.push(c); return c; }catch(e){ return null; } }
+function destroyCharts(){ charts.forEach(c=>{try{c.destroy();}catch(e){}}); charts=[]; }
+function nav(p){ location.hash='#'+p; }
+window.addEventListener('hashchange',route);
+function route(){ destroyCharts(); hideSearch();
+ const hash=location.hash.slice(1)||'/dashboard';
+ const parts=hash.split('/').filter(Boolean); const p='/'+(parts[0]||'dashboard'); const param=parts[1];
+ // leaving test session?
+ if(TS && p!=='/test' && p!=='/practice'){ stopTimer(); TS=null; }
+ const titles={'/dashboard':t('dashboard'),'/books':t('myBooks'),'/subjects':t('subjects'),'/chapters':t('chapters'),'/sheets':t('answerSheets'),'/keys':t('answerKeys'),'/history':t('history'),'/stats':t('stats'),'/analysis':t('analysis'),'/settings':t('settings'),'/book':t('book'),'/test':t('answerSheets'),'/key':t('keyEditor'),'/results':t('results'),'/practice':t('practice')};
+ setTitle(titles[p]||t('dashboard'));
+ renderSidebarActive(p);
+ const v=$('#view'); window.scrollTo(0,0); v.scrollTop=0;
+ switch(p){
+  case '/dashboard': renderDashboard(); break;
+  case '/books': renderBooks(); break;
+  case '/book': renderBookDetail(param); break;
+  case '/subjects': renderSubjects(); break;
+  case '/chapters': renderChapters(); break;
+  case '/sheets': renderSheets(); break;
+  case '/keys': renderKeys(); break;
+  case '/key': renderKeyEditor(param); break;
+  case '/test': startTestSession(param); break;
+  case '/practice': startPracticeSession(); break;
+  case '/results': renderResults(param); break;
+  case '/history': renderHistory(); break;
+  case '/stats': renderStats(); break;
+  case '/analysis': renderAnalysis(); break;
+  case '/settings': renderSettings(); break;
+  default: renderDashboard();
+ }
+}
+function renderSidebarActive(p){ $$('#sidebar .nav-item').forEach(el=>{ el.classList.toggle('active', el.dataset.nav===p || (p==='/book'&&el.dataset.nav==='/books') || (p==='/test'&&el.dataset.nav==='/sheets') || (p==='/key'&&el.dataset.nav==='/keys') || (p==='/results'&&el.dataset.nav==='/history') || (p==='/practice'&&el.dataset.nav==='/analysis')); }); }
+
+// ---------------- Shared UI bits ----------------
+function ringSVG(percent,size=110,stroke=10,color='#6366f1'){ const r=(size-stroke)/2,c=2*Math.PI*r,off=c*(1-clamp(percent,0,100)/100);
+ return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="-rotate-90"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="${stroke}" class="ring-track"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" style="transition:stroke-dashoffset 1s cubic-bezier(.22,1,.36,1)"/></svg>`; }
+function coverHTML(b,cls='w-full h-28'){ if(b.cover&&b.cover.type==='image'&&b.cover.val) return `<div class="${cls} rounded-2xl overflow-hidden"><img src="${b.cover.val}" class="w-full h-full object-cover" alt=""></div>`;
+ const g=(b.cover&&b.cover.val)||['#6366f1','#8b5cf6']; return `<div class="${cls} rounded-2xl flex items-center justify-center text-white font-extrabold text-3xl shadow-inner" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${esc((b.title||'?').charAt(0).toUpperCase())}</div>`; }
+function statCard(ic,label,val,sub,color){ return `<div class="card p-5 anim flex items-center gap-4"><div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:${color}1a;color:${color}">${icon(ic,'w-6 h-6')}</div><div class="min-w-0"><div class="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">${label}</div><div class="stat-num">${val}</div>${sub?`<div class="text-xs text-slate-400 mt-0.5">${sub}</div>`:''}</div></div>`; }
+function emptyState(ic,title,msg,btns){ return `<div class="card p-10 md:p-16 text-center anim"><div class="w-20 h-20 mx-auto rounded-3xl bg-indigo-100 dark:bg-indigo-500/15 text-indigo-500 flex items-center justify-center mb-5">${icon(ic,'w-10 h-10')}</div><h3 class="text-xl font-extrabold mb-2">${title}</h3><p class="text-sm text-slate-400 max-w-md mx-auto mb-6">${msg}</p><div class="flex flex-wrap gap-3 justify-center">${btns}</div></div>`; }
+function bar(pctVal,color){ return `<div class="h-2 rounded-full progress-track overflow-hidden"><div class="h-full rounded-full transition-all duration-700" style="width:${clamp(pctVal,0,100)}%;background:${color}"></div></div>`; }
+
+// ---------------- Dashboard ----------------
+function renderDashboard(){ const v=$('#view'); const agg=aggregate(D.attempts);
+ const todayStart=startOfDay(Date.now()); const todayAgg=aggregate(D.attempts.filter(a=>a.submittedAt>=todayStart));
+ const drafts=Object.entries(D.drafts||{}).map(([tid,d])=>({tid,d,f:findTest(tid)})).filter(x=>x.f);
+ if(D.books.length===0){ v.innerHTML=`<div class="max-w-3xl mx-auto mt-6">${emptyState('book',t('noBooksTitle'),t('noBooksMsg'),`<button class="btn btn-primary" onclick="bookForm()">${icon('plus','w-4 h-4')}${t('createFirst')}</button><button class="btn btn-ghost" onclick="loadSample()">${icon('download','w-4 h-4')}${t('loadSample')}</button>`)}</div>`; return; }
+ const recent=D.attempts.slice(0,6);
+ const bookAgg=D.books.map(b=>({b,a:aggregate(attemptsForBook(b.id))})).filter(x=>x.a.answered>0).sort((x,y)=>y.a.answered-x.a.answered).slice(0,5);
+ v.innerHTML=`<div class="max-w-7xl mx-auto space-y-6">
+ ${drafts.length?`<div class="card p-5 anim border-2 !border-amber-400/60 bg-amber-50/50 dark:!bg-amber-500/5"><div class="flex flex-wrap items-center gap-4"><div class="w-11 h-11 rounded-xl bg-amber-400/20 text-amber-500 flex items-center justify-center">${icon('play','w-5 h-5')}</div><div class="flex-1 min-w-[200px]"><div class="font-extrabold">${t('continueWhere')}</div><div class="text-sm text-slate-500 dark:text-slate-400">${esc(drafts[0].f.test.title)} • ${esc(drafts[0].f.book.title)} — ${dnum(Object.keys(drafts[0].d.answers||{}).length)}/${dnum(drafts[0].f.test.questionCount)} ${t('answered')}</div></div><button class="btn btn-primary" onclick="nav('/test/${drafts[0].tid}')">${icon('play','w-4 h-4')}${t('continueTest')}</button></div></div>`:''}
+ <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  ${statCard('book',t('books'),dnum(D.books.length),dnum(uniqueSubjects().length)+' '+t('subjectsCount').toLowerCase(),'#6366f1')}
+  ${statCard('bookmark',t('chaptersCount'),dnum(D.books.reduce((s,b)=>s+(b.chapters||[]).length,0)),'','#06b6d4')}
+  ${statCard('check',t('testsTaken'),dnum(agg.tests),dnum(todayAgg.tests)+' '+t('todayShort').toLowerCase(),'#10b981')}
+  ${statCard('doc',t('questionsAnswered'),dnum(agg.answered),dnum(agg.total)+' '+t('totalQuestions').toLowerCase(),'#f59e0b')}
+ </div>
+ <div class="grid lg:grid-cols-3 gap-4">
+  <div class="card p-6 anim flex items-center gap-6">
+   <div class="relative">${ringSVG(agg.accuracy,110,10,'#6366f1')}<div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-2xl font-extrabold ${accColor(agg.accuracy)}">${pct(agg.accuracy,0)}</span><span class="text-[10px] font-bold text-slate-400 uppercase">${t('accuracy')}</span></div></div>
+   <div class="flex-1 space-y-2.5 text-sm">
+    <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>${t('correct')}</span><b>${dnum(agg.correct)}</b></div>
+    <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>${t('incorrect')}</span><b>${dnum(agg.incorrect)}</b></div>
+    <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>${t('unanswered')}</span><b>${dnum(agg.unanswered)}</b></div>
+    <div class="pt-2 border-t border-slate-100 dark:border-slate-700 flex justify-between text-xs text-slate-400"><span>${t('completion')}</span><span>${pct(agg.completion)}</span></div>
+   </div>
+  </div>
+  <div class="card p-6 anim">
+   <div class="flex items-center gap-2 mb-4 font-extrabold">${icon('sun','w-5 h-5')} ${t('todayActivity')}</div>
+   <div class="grid grid-cols-2 gap-3 text-center">
+    <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3"><div class="text-xl font-extrabold text-indigo-500">${dnum(todayAgg.tests)}</div><div class="text-[11px] font-bold text-slate-400">${t('tests')}</div></div>
+    <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3"><div class="text-xl font-extrabold text-cyan-500">${dnum(todayAgg.answered)}</div><div class="text-[11px] font-bold text-slate-400">${t('answered')}</div></div>
+    <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3"><div class="text-xl font-extrabold text-emerald-500">${dnum(todayAgg.correct)}</div><div class="text-[11px] font-bold text-slate-400">${t('correct')}</div></div>
+    <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3"><div class="text-xl font-extrabold text-amber-500">${fmtDur(todayAgg.time)}</div><div class="text-[11px] font-bold text-slate-400">${t('time')}</div></div>
+   </div>
+  </div>
+  <div class="card p-6 anim">
+   <div class="flex items-center gap-2 mb-4 font-extrabold">${icon('target','w-5 h-5')} ${t('quickActions')}</div>
+   <div class="space-y-2.5">
+    <button class="btn btn-primary w-full" onclick="quickStartModal()">${icon('play','w-4 h-4')}${t('startNewTest')}</button>
+    <button class="btn btn-ghost w-full" onclick="bookForm()">${icon('plus','w-4 h-4')}${t('addBook')}</button>
+    <button class="btn btn-ghost w-full" onclick="nav('/analysis')">${icon('pulse','w-4 h-4')}${t('practiceFromMistakes')}</button>
+   </div>
+  </div>
+ </div>
+ <div class="grid lg:grid-cols-3 gap-4">
+  <div class="card p-6 anim lg:col-span-2"><div class="flex items-center justify-between mb-4"><b>${t('performanceTrend')}</b><span class="text-xs text-slate-400">${t('last30')}</span></div><div class="h-64"><canvas id="chTrend"></canvas></div></div>
+  <div class="card p-6 anim"><b class="block mb-4">${t('answerDistribution')}</b><div class="h-64 flex items-center justify-center"><canvas id="chDist"></canvas></div></div>
+ </div>
+ <div class="grid lg:grid-cols-2 gap-4">
+  <div class="card p-6 anim"><b class="block mb-4">${t('topBooks')}</b>${bookAgg.length?`<div class="h-56"><canvas id="chBooks"></canvas></div>`:`<p class="text-sm text-slate-400 py-10 text-center">${t('noAttempts')}</p>`}</div>
+  <div class="card p-6 anim"><div class="flex items-center justify-between mb-4"><b>${t('recentTests')}</b><button class="text-xs font-bold text-indigo-500 hover:underline" onclick="nav('/history')">${t('viewAll')}</button></div>
+   ${recent.length?`<div class="space-y-2">${recent.map(a=>`<div class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/40 cursor-pointer transition" onclick="nav('/results/${a.id}')"><div class="w-9 h-9 rounded-lg ${a.practice?'bg-fuchsia-100 dark:bg-fuchsia-500/15 text-fuchsia-500':'bg-indigo-100 dark:bg-indigo-500/15 text-indigo-500'} flex items-center justify-center flex-shrink-0">${icon(a.practice?'pulse':'doc','w-4 h-4')}</div><div class="flex-1 min-w-0"><div class="text-sm font-bold truncate">${esc(a.title)}</div><div class="text-xs text-slate-400 truncate">${esc(a.bookTitle)} • ${fmtDT(a.submittedAt)}</div></div>${accBadge(a.results.accuracy)}</div>`).join('')}</div>`:`<p class="text-sm text-slate-400 py-10 text-center">${t('noAttempts')}</p>`}
+  </div>
+ </div></div>`;
+ // charts
+ const dark=document.documentElement.classList.contains('dark'); const gridC=dark?'rgba(148,163,184,.12)':'rgba(100,116,139,.12)'; const tickC=dark?'#94a3b8':'#64748b';
+ if(window.Chart){ Chart.defaults.font.family=LANG==='fa'?'Vazirmatn':'Inter'; }
+ const days=[]; for(let i=29;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0); days.push({start:d.getTime(),end:d.getTime()+86400000,label:new Intl.DateTimeFormat(LANG==='fa'?'fa-IR':'en-US',{month:'numeric',day:'numeric'}).format(d)}); }
+ const qData=days.map(b=>aggregate(D.attempts.filter(a=>a.submittedAt>=b.start&&a.submittedAt<b.end)).answered);
+ const aData=days.map(b=>{ const g=aggregate(D.attempts.filter(a=>a.submittedAt>=b.start&&a.submittedAt<b.end)); return g.answered?+g.accuracy.toFixed(1):null; });
+ makeChart('chTrend',{data:{labels:days.map(d=>d.label),datasets:[{type:'bar',label:t('questionsBar'),data:qData,backgroundColor:'rgba(99,102,241,.75)',borderRadius:6,yAxisID:'y',maxBarThickness:22},{type:'line',label:t('accLine'),data:aData,borderColor:'#10b981',backgroundColor:'#10b981',tension:.35,spanGaps:true,yAxisID:'y1',pointRadius:2,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickC,boxWidth:12}}},scales:{y:{beginAtZero:true,grid:{color:gridC},ticks:{color:tickC,precision:0}},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{color:tickC}},x:{grid:{display:false},ticks:{color:tickC,maxTicksLimit:10}}}}});
+ makeChart('chDist',{type:'doughnut',data:{labels:[t('correct'),t('incorrect'),t('unanswered')],datasets:[{data:[agg.correct,agg.incorrect,agg.unanswered],backgroundColor:['#10b981','#f43f5e','#94a3b8'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom',labels:{color:tickC,boxWidth:12,padding:16}}}}});
+ if(bookAgg.length) makeChart('chBooks',{type:'bar',data:{labels:bookAgg.map(x=>x.b.title),datasets:[{label:t('answered'),data:bookAgg.map(x=>x.a.answered),backgroundColor:['#6366f1','#06b6d4','#10b981','#f59e0b','#ec4899'],borderRadius:8,maxBarThickness:26}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:gridC},ticks:{color:tickC,precision:0}},y:{grid:{display:false},ticks:{color:tickC}}}}});
+}
+function quickStartModal(){ const tests=allTests(); if(!tests.length){ toast(t('noTestsYet2'),'info'); return; }
+ const m=openModal(`<h3 class="text-lg font-extrabold mb-4">${t('selectTest')}</h3><div class="space-y-2 max-h-96 overflow-y-auto">${tests.map(x=>`<div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 cursor-pointer transition" onclick="closeModal();nav('/test/${x.test.id}')"><div class="flex-1 min-w-0"><div class="font-bold text-sm truncate">${esc(x.test.title)}</div><div class="text-xs text-slate-400 truncate">${esc(x.book.title)} • ${esc(x.chapter.title)} • ${dnum(x.test.questionCount)} ${t('questionsL')}</div></div>${D.drafts[x.test.id]?`<span class="badge bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">${t('inProgress')}</span>`:''}${icon('play','w-4 h-4 text-indigo-500')}</div>`).join('')}</div>`); }
+
+// ---------------- Books ----------------
+let bookSearch='';
+function renderBooks(){ const v=$('#view');
+ const list=D.books.filter(b=>!bookSearch||(b.title+' '+(b.subject||'')+' '+(b.author||'')).toLowerCase().includes(bookSearch.toLowerCase()));
+ v.innerHTML=`<div class="max-w-7xl mx-auto space-y-5">
+ <div class="flex flex-wrap items-center gap-3 anim">
+  <div class="relative flex-1 min-w-[220px] max-w-sm"><span class="absolute top-1/2 -translate-y-1/2 start-3 text-slate-400">${icon('search','w-4 h-4')}</span><input id="bkSearch" class="input !ps-9" placeholder="${t('searchPh')}" value="${esc(bookSearch)}"></div>
+  <div class="flex-1"></div>
+  <button class="btn btn-ghost" onclick="importBookModal()">${icon('upload','w-4 h-4')}${t('importBook')}</button>
+  <button class="btn btn-primary" onclick="bookForm()">${icon('plus','w-4 h-4')}${t('addBook')}</button>
+ </div>
+ ${list.length?`<div id="bkGrid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">${list.map(b=>bookCardHTML(b)).join('')}</div>`:emptyState('book',t('noBooksTitle'),t('noBooksMsg'),`<button class="btn btn-primary" onclick="bookForm()">${icon('plus','w-4 h-4')}${t('createFirst')}</button><button class="btn btn-ghost" onclick="loadSample()">${icon('download','w-4 h-4')}${t('loadSample')}</button>`)}
+ </div>`;
+ $('#bkSearch').addEventListener('input',e=>{ bookSearch=e.target.value; const l=D.books.filter(b=>!bookSearch||(b.title+' '+(b.subject||'')+' '+(b.author||'')).toLowerCase().includes(bookSearch.toLowerCase())); const g=$('#bkGrid'); if(g) g.innerHTML=l.map(b=>bookCardHTML(b)).join(''); });
+}
+function bookCardHTML(b){ const a=aggregate(attemptsForBook(b.id)); const idx=D.books.indexOf(b);
+ return `<div class="card overflow-hidden anim hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group" onclick="nav('/book/${b.id}')">
+ ${coverHTML(b,'w-full h-32 !rounded-none')}
+ <div class="p-5">
+  <div class="flex items-start justify-between gap-2 mb-1"><h3 class="font-extrabold text-lg truncate group-hover:text-indigo-500 transition">${esc(b.title)}</h3></div>
+  <div class="flex flex-wrap gap-1.5 mb-3">${b.subject?`<span class="badge bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400">${esc(b.subject)}</span>`:''}${b.grade?`<span class="badge bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">${esc(b.grade)}</span>`:''}</div>
+  <div class="flex gap-4 text-xs text-slate-400 font-semibold mb-3"><span>${dnum((b.chapters||[]).length)} ${t('chaptersL')}</span><span>${dnum(bookTestCount(b))} ${t('tests')}</span><span>${dnum(bookQuestionCount(b))} ${t('questionsL')}</span></div>
+  <div class="flex items-center gap-2 mb-4">${bar(a.accuracy,'linear-gradient(90deg,#6366f1,#a855f7)')}<span class="text-xs font-extrabold ${accColor(a.accuracy)} whitespace-nowrap">${a.answered?pct(a.accuracy,0):'—'}</span></div>
+  <div class="flex gap-1 no-print" onclick="event.stopPropagation()">
+   <button class="icon-btn" title="${t('edit')}" onclick="bookForm('${b.id}')">${icon('pencil','w-4 h-4')}</button>
+   <button class="icon-btn" title="${t('shareBook')}" onclick="shareBookModal('${b.id}')">${icon('share','w-4 h-4')}</button>
+   <button class="icon-btn" title="${t('moveUp')}" ${idx===0?'disabled':''} onclick="moveBook('${b.id}',-1)">${icon('chevU','w-4 h-4')}</button>
+   <button class="icon-btn" title="${t('moveDown')}" ${idx===D.books.length-1?'disabled':''} onclick="moveBook('${b.id}',1)">${icon('chevD','w-4 h-4')}</button>
+   <div class="flex-1"></div>
+   <button class="icon-btn hover:!text-rose-500" title="${t('del')}" onclick="delBook('${b.id}')">${icon('trash','w-4 h-4')}</button>
+  </div>
+ </div></div>`; }
+const GRADS=[['#6366f1','#8b5cf6'],['#06b6d4','#3b82f6'],['#10b981','#84cc16'],['#f59e0b','#ef4444'],['#ec4899','#8b5cf6'],['#14b8a6','#0ea5e9'],['#f97316','#eab308'],['#64748b','#334155']];
+let coverSel=null;
+function bookForm(bid){ const b=bid?findBook(bid):null; coverSel=b&&b.cover?{...b.cover}:{type:'gradient',val:GRADS[0]};
+ const m=openModal(`<h3 class="text-lg font-extrabold mb-5">${b?t('editBook'):t('addBook')}</h3>
+ <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <div class="sm:col-span-2"><label class="label">${t('bookTitle')} *</label><input id="bfTitle" class="input" value="${esc(b?b.title:'')}"></div>
+  <div><label class="label">${t('subject')}</label><input id="bfSubject" class="input" value="${esc(b?b.subject||'':'')}" list="subjList"><datalist id="subjList">${uniqueSubjects().map(s=>`<option value="${esc(s)}">`).join('')}</datalist></div>
+  <div><label class="label">${t('gradeLevel')}</label><input id="bfGrade" class="input" value="${esc(b?b.grade||'':'')}"></div>
+  <div class="sm:col-span-2"><label class="label">${t('author')}</label><input id="bfAuthor" class="input" value="${esc(b?b.author||'':'')}"></div>
+  <div class="sm:col-span-2"><label class="label">${t('notes')}</label><textarea id="bfNotes" class="input" rows="2">${esc(b?b.notes||'':'')}</textarea></div>
+  <div class="sm:col-span-2"><label class="label">${t('cover')}</label>
+   <div class="flex flex-wrap gap-2 mb-2" id="bfGrads">${GRADS.map((g,i)=>`<button class="w-10 h-10 rounded-xl border-2 transition ${JSON.stringify(coverSel.val)===JSON.stringify(g)?'border-indigo-500 scale-110':'border-transparent'}" style="background:linear-gradient(135deg,${g[0]},${g[1]})" data-g="${i}"></button>`).join('')}</div>
+   <label class="btn btn-ghost w-full cursor-pointer">${icon('upload','w-4 h-4')}${t('uploadImage')}<input type="file" id="bfImg" accept="image/*" class="hidden"></label>
+   <div id="bfImgPrev" class="mt-2">${coverSel.type==='image'?`<img src="${coverSel.val}" class="h-20 rounded-xl object-cover">`:''}</div>
+  </div>
+ </div>
+ <div class="flex gap-3 justify-end mt-6"><button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button><button class="btn btn-primary" id="bfSave">${t('save')}</button></div>`);
+ m.querySelectorAll('#bfGrads button').forEach(btn=>btn.onclick=()=>{ coverSel={type:'gradient',val:GRADS[+btn.dataset.g]}; m.querySelectorAll('#bfGrads button').forEach(x=>x.className=x.className.replace('border-indigo-500 scale-110','border-transparent')); btn.className=btn.className.replace('border-transparent','border-indigo-500 scale-110'); $('#bfImgPrev').innerHTML=''; });
+ m.querySelector('#bfImg').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ coverSel={type:'image',val:r.result}; $('#bfImgPrev').innerHTML=`<img src="${r.result}" class="h-20 rounded-xl object-cover">`; }; r.readAsDataURL(f); };
+ m.querySelector('#bfSave').onclick=()=>{ const title=$('#bfTitle').value.trim(); if(!title) return toast(t('fillAll'),'error');
+  if(b){ Object.assign(b,{title,subject:$('#bfSubject').value.trim(),grade:$('#bfGrade').value.trim(),author:$('#bfAuthor').value.trim(),notes:$('#bfNotes').value.trim(),cover:coverSel}); }
+  else { D.books.push({id:uid(),title,subject:$('#bfSubject').value.trim(),grade:$('#bfGrade').value.trim(),author:$('#bfAuthor').value.trim(),notes:$('#bfNotes').value.trim(),cover:coverSel,createdAt:Date.now(),chapters:[]}); }
+  saveData(); closeModal(); toast(t('saved')); route(); }; }
+async function delBook(bid){ const b=findBook(bid); if(!b) return; if(!await confirmDialog(t('areYouSure'),t('confirmDelBook'),t('yesDelete'))) return; D.books=D.books.filter(x=>x.id!==bid); saveData(); toast(t('deleted'),'info'); nav('/books'); route(); }
+function moveBook(bid,dir){ const i=D.books.findIndex(b=>b.id===bid); const j=i+dir; if(j<0||j>=D.books.length) return; [D.books[i],D.books[j]]=[D.books[j],D.books[i]]; saveData(); route(); }
+function shareBookModal(bid){ const b=findBook(bid); const json=JSON.stringify({app:'answersheet-pro',type:'book',book:b},null,1);
+ const m=openModal(`<h3 class="text-lg font-extrabold mb-2">${t('shareBook')}</h3><p class="text-sm text-slate-400 mb-4">${t('shareHint')}</p><textarea id="shJson" class="input font-mono text-xs" rows="10" dir="ltr" readonly>${esc(json)}</textarea><div class="flex gap-3 justify-end mt-4"><button class="btn btn-ghost" id="shCopy">${icon('copy','w-4 h-4')}${t('copyJSON')}</button><button class="btn btn-primary" id="shDl">${icon('download','w-4 h-4')}${t('dataExport')}</button></div>`);
+ m.querySelector('#shCopy').onclick=()=>{ navigator.clipboard.writeText(json).then(()=>toast(t('copied'))); };
+ m.querySelector('#shDl').onclick=()=>downloadFile(b.title.replace(/\s+/g,'_')+'.json',json,'application/json'); }
+function importBookModal(){ const m=openModal(`<h3 class="text-lg font-extrabold mb-4">${t('importBook')}</h3><textarea id="imJson" class="input font-mono text-xs" rows="8" dir="ltr" placeholder="${t('pasteJSON')}"></textarea><div class="flex gap-3 justify-between mt-4"><label class="btn btn-ghost cursor-pointer">${icon('upload','w-4 h-4')}JSON<input type="file" id="imFile" accept=".json" class="hidden"></label><div class="flex gap-2"><button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button><button class="btn btn-primary" id="imGo">${t('import')}</button></div></div>`);
+ m.querySelector('#imFile').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ $('#imJson').value=r.result; }; r.readAsText(f); };
+ m.querySelector('#imGo').onclick=()=>{ try{ const obj=JSON.parse($('#imJson').value); const b=obj.book||obj; if(!b.title||!Array.isArray(b.chapters)) throw 0;
+   const nb={id:uid(),title:b.title,subject:b.subject||'',grade:b.grade||'',author:b.author||'',notes:b.notes||'',cover:b.cover&&b.cover.type==='gradient'?b.cover:{type:'gradient',val:GRADS[D.books.length%GRADS.length]},createdAt:Date.now(),chapters:b.chapters.map(c=>({id:uid(),title:c.title||t('untitled'),notes:c.notes||'',tests:(c.tests||[]).map(tt=>({id:uid(),title:tt.title||t('untitled'),questionCount:tt.questionCount||Object.keys(tt.key||{}).length||0,optionsCount:tt.optionsCount||4,key:tt.key||{},explanations:tt.explanations||{},questions:tt.questions||{},qChapters:{},scoring:tt.scoring||{negative:false,penalty:0.25},createdAt:Date.now()}))}))};
+   D.books.push(nb); saveData(); closeModal(); toast(t('importSuccess')); route(); }catch(e){ toast(t('importErr'),'error'); } }; }
+function loadSample(){ const b={id:uid(),title:'Grade 9 Science',subject:'Science',grade:'Grade 9',author:'Sample Publisher',notes:'Sample book with real answer keys — take the tests to generate your own statistics.',cover:{type:'gradient',val:GRADS[1]},createdAt:Date.now(),chapters:[
+ {id:uid(),title:'Chemistry',notes:'',tests:[{id:uid(),title:'Practice Test 1',questionCount:10,optionsCount:4,key:{1:'B',2:'D',3:'A',4:'C',5:'B',6:'A',7:'D',8:'C',9:'B',10:'A'},explanations:{1:'Water is H₂O — hydrogen and oxygen.',3:'Atoms of the same element have the same number of protons.',5:'Acids turn blue litmus paper red.',7:'The periodic table groups elements by atomic number.'},questions:{},qChapters:{},scoring:{negative:false,penalty:0.25},createdAt:Date.now()}]},
+ {id:uid(),title:'Physics',notes:'',tests:[{id:uid(),title:'Motion & Forces Quiz',questionCount:8,optionsCount:4,key:{1:'C',2:'A',3:'D',4:'B',5:'C',6:'A',7:'B',8:'D'},explanations:{2:'Speed = distance / time.',4:'Newton\'s first law: inertia.'},questions:{},qChapters:{},scoring:{negative:false,penalty:0.25},createdAt:Date.now()}]},
+ {id:uid(),title:'Biology',notes:'',tests:[{id:uid(),title:'Cell Biology Test',questionCount:10,optionsCount:5,key:{1:'A',2:'C',3:'B',4:'D',5:'A',6:'B',7:'C',8:'D',9:'A',10:'E'},explanations:{1:'The nucleus contains genetic material.',10:'Chloroplasts perform photosynthesis.'},questions:{},qChapters:{},scoring:{negative:false,penalty:0.25},createdAt:Date.now()}]}]};
+ D.books.push(b); saveData(); toast(t('sampleLoaded'),'info'); route(); }
+
+// ---------------- Book Detail ----------------
+function renderBookDetail(bid){ const b=findBook(bid); if(!b) return nav('/books'); const v=$('#view'); const a=aggregate(attemptsForBook(bid));
+ v.innerHTML=`<div class="max-w-6xl mx-auto space-y-6">
+ <div class="card overflow-hidden anim">
+  <div class="md:flex">
+   <div class="md:w-64 flex-shrink-0">${coverHTML(b,'w-full h-40 md:h-full !rounded-none')}</div>
+   <div class="p-6 flex-1">
+    <div class="flex flex-wrap items-start gap-3">
+     <div class="flex-1 min-w-[200px]"><h1 class="text-2xl font-extrabold mb-1">${esc(b.title)}</h1>
+      <div class="flex flex-wrap gap-1.5 mb-2">${b.subject?`<span class="badge bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400">${esc(b.subject)}</span>`:''}${b.grade?`<span class="badge bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">${esc(b.grade)}</span>`:''}${b.author?`<span class="badge bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">${esc(b.author)}</span>`:''}</div>
+      ${b.notes?`<p class="text-sm text-slate-400 leading-relaxed">${esc(b.notes)}</p>`:''}
+     </div>
+     <div class="flex gap-1.5 no-print">
+      <button class="icon-btn" title="${t('edit')}" onclick="bookForm('${b.id}')">${icon('pencil','w-4 h-4')}</button>
+      <button class="icon-btn" title="${t('shareBook')}" onclick="shareBookModal('${b.id}')">${icon('share','w-4 h-4')}</button>
+      <button class="icon-btn hover:!text-rose-500" title="${t('del')}" onclick="delBook('${b.id}')">${icon('trash','w-4 h-4')}</button>
+     </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 text-center">
+     <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3"><div class="text-lg font-extrabold text-indigo-500">${dnum(a.tests)}</div><div class="text-[11px] font-bold text-slate-400">${t('testsTaken')}</div></div>
+     <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3"><div class="text-lg font-extrabold text-cyan-500">${dnum(a.answered)}</div><div class="text-[11px] font-bold text-slate-400">${t('answered')}</div></div>
+     <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3"><div class="text-lg font-extrabold ${accColor(a.accuracy)}">${a.answered?pct(a.accuracy):'—'}</div><div class="text-[11px] font-bold text-slate-400">${t('accuracy')}</div></div>
+     <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3"><div class="text-lg font-extrabold text-amber-500">${fmtDur(a.time)}</div><div class="text-[11px] font-bold text-slate-400">${t('timeSpent')}</div></div>
+    </div>
+   </div>
+  </div>
+ </div>
+ <div class="flex items-center justify-between anim"><h2 class="text-lg font-extrabold">${t('chapters')}</h2><button class="btn btn-primary" onclick="chapterForm('${b.id}')">${icon('plus','w-4 h-4')}${t('addChapter')}</button></div>
+ ${(b.chapters||[]).length? b.chapters.map((c,ci)=>chapterCardHTML(b,c,ci)).join('') : emptyState('bookmark',t('noChapters'),'',`<button class="btn btn-primary" onclick="chapterForm('${b.id}')">${icon('plus','w-4 h-4')}${t('addChapter')}</button>`)}
+ </div>`; }
+function chapterCardHTML(b,c,ci){ return `<div class="card p-5 anim">
+ <div class="flex flex-wrap items-center gap-3 mb-4">
+  <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-500/15 text-indigo-500 flex items-center justify-center font-extrabold">${dnum(ci+1)}</div>
+  <div class="flex-1 min-w-[150px]"><h3 class="font-extrabold">${esc(c.title)}</h3>${c.notes?`<p class="text-xs text-slate-400">${esc(c.notes)}</p>`:''}</div>
+  <div class="flex gap-1 no-print">
+   <button class="icon-btn" title="${t('edit')}" onclick="chapterForm('${b.id}','${c.id}')">${icon('pencil','w-4 h-4')}</button>
+   <button class="icon-btn" title="${t('moveUp')}" ${ci===0?'disabled':''} onclick="moveChapter('${b.id}','${c.id}',-1)">${icon('chevU','w-4 h-4')}</button>
+   <button class="icon-btn" title="${t('moveDown')}" ${ci===b.chapters.length-1?'disabled':''} onclick="moveChapter('${b.id}','${c.id}',1)">${icon('chevD','w-4 h-4')}</button>
+   <button class="icon-btn hover:!text-rose-500" title="${t('del')}" onclick="delChapter('${b.id}','${c.id}')">${icon('trash','w-4 h-4')}</button>
+   <button class="btn btn-primary !py-2" onclick="testForm('${b.id}','${c.id}')">${icon('plus','w-4 h-4')}${t('addTest')}</button>
+  </div>
+ </div>
+ ${(c.tests||[]).length?`<div class="overflow-x-auto"><table class="w-full min-w-[640px]"><thead><tr><th class="th">${t('test')}</th><th class="th">${t('questions')}</th><th class="th">${t('keyStatus')}</th><th class="th">${t('attempts')}</th><th class="th">${t('lastAcc')}</th><th class="th text-end">${t('actions')}</th></tr></thead><tbody>
+ ${c.tests.map((tt,ti)=>{ const ats=attemptsForTest(tt.id); const last=ats[0]; const kc=keyCount(tt); const draft=D.drafts[tt.id];
+  return `<tr class="border-t border-slate-100 dark:border-slate-700/60">
+   <td class="td font-bold">${esc(tt.title)} ${draft?`<span class="badge bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400 ms-1">${t('inProgress')}</span>`:''}</td>
+   <td class="td">${dnum(tt.questionCount)}</td>
+   <td class="td"><span class="badge ${kc>=tt.questionCount?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400':'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'}">${dnum(kc)}/${dnum(tt.questionCount)}</span></td>
+   <td class="td">${dnum(ats.length)}</td>
+   <td class="td">${last?accBadge(last.results.accuracy):'<span class="text-slate-400 text-xs">—</span>'}</td>
+   <td class="td"><div class="flex gap-1 justify-end">
+    <button class="icon-btn !text-indigo-500" title="${t('takeTest')}" onclick="nav('/test/${tt.id}')">${icon('play','w-4 h-4')}</button>
+    <button class="icon-btn" title="${t('answerKey')}" onclick="nav('/key/${tt.id}')">${icon('key','w-4 h-4')}</button>
+    <button class="icon-btn" title="${t('printBlank')}" onclick="printBlankSheet('${tt.id}')">${icon('printer','w-4 h-4')}</button>
+    <button class="icon-btn" title="${t('moveUp')}" ${ti===0?'disabled':''} onclick="moveTest('${b.id}','${c.id}','${tt.id}',-1)">${icon('chevU','w-4 h-4')}</button>
+    <button class="icon-btn" title="${t('moveDown')}" ${ti===c.tests.length-1?'disabled':''} onclick="moveTest('${b.id}','${c.id}','${tt.id}',1)">${icon('chevD','w-4 h-4')}</button>
+    <button class="icon-btn hover:!text-rose-500" title="${t('del')}" onclick="delTest('${b.id}','${c.id}','${tt.id}')">${icon('trash','w-4 h-4')}</button>
+   </div></td></tr>`; }).join('')}
+ </tbody></table></div>`:`<p class="text-sm text-slate-400 text-center py-4">${t('noTests')}</p>`}
+</div>`; }
+function chapterForm(bid,cid){ const b=findBook(bid); const c=cid?b.chapters.find(x=>x.id===cid):null;
+ const m=openModal(`<h3 class="text-lg font-extrabold mb-5">${c?t('edit'):t('addChapter')}</h3>
+ <div class="mb-4"><label class="label">${t('chapterTitle')} *</label><input id="cfTitle" class="input" value="${esc(c?c.title:'')}"></div>
+ <div class="mb-4"><label class="label">${t('notes')}</label><textarea id="cfNotes" class="input" rows="2">${esc(c?c.notes||'':'')}</textarea></div>
+ <div class="flex gap-3 justify-end"><button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button><button class="btn btn-primary" id="cfSave">${t('save')}</button></div>`);
+ m.querySelector('#cfSave').onclick=()=>{ const title=$('#cfTitle').value.trim(); if(!title) return toast(t('fillAll'),'error');
+  if(c){ c.title=title; c.notes=$('#cfNotes').value.trim(); } else { b.chapters=b.chapters||[]; b.chapters.push({id:uid(),title,notes:$('#cfNotes').value.trim(),tests:[]}); }
+  saveData(); closeModal(); toast(t('saved')); route(); }; }
+async function delChapter(bid,cid){ if(!await confirmDialog(t('areYouSure'),t('confirmDelChapter'),t('yesDelete'))) return; const b=findBook(bid); b.chapters=b.chapters.filter(x=>x.id!==cid); saveData(); toast(t('deleted'),'info'); route(); }
+function moveChapter(bid,cid,dir){ const b=findBook(bid); const i=b.chapters.findIndex(x=>x.id===cid); const j=i+dir; if(j<0||j>=b.chapters.length) return; [b.chapters[i],b.chapters[j]]=[b.chapters[j],b.chapters[i]]; saveData(); route(); }
+function testForm(bid,cid){ const st=getSettings();
+ const m=openModal(`<h3 class="text-lg font-extrabold mb-5">${t('addTest')}</h3>
+ <div class="mb-4"><label class="label">${t('testTitle')} *</label><input id="tfTitle" class="input" value=""></div>
+ <div class="grid grid-cols-2 gap-4 mb-4">
+  <div><label class="label">${t('numQuestions')}</label><input id="tfCount" type="number" min="1" max="500" class="input" value="20"></div>
+  <div><label class="label">${t('optionsCount')}</label><select id="tfOpts" class="input"><option value="4">${t('four')}</option><option value="5">${t('five')}</option></select></div>
+ </div>
+ <label class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 cursor-pointer mb-2"><input type="checkbox" id="tfNeg" class="w-4 h-4 accent-indigo-600" ${st.negDefault?'checked':''}><span class="text-sm font-bold">${t('enableNeg')}</span></label>
+ <div class="mb-2"><label class="label">${t('penalty')}</label><input id="tfPen" type="number" step="0.05" min="0" class="input" value="${st.penaltyDefault||0.25}"></div>
+ <div class="flex gap-3 justify-end mt-5"><button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button><button class="btn btn-primary" id="tfSave">${t('save')}</button></div>`);
+ m.querySelector('#tfSave').onclick=()=>{ const title=$('#tfTitle').value.trim(); const count=clamp(parseInt($('#tfCount').value)||0,0,500); if(!title) return toast(t('fillAll'),'error');
+  const b=findBook(bid); const c=b.chapters.find(x=>x.id===cid);
+  const tt={id:uid(),title,questionCount:count,optionsCount:+$('#tfOpts').value,key:{},explanations:{},questions:{},qChapters:{},scoring:{negative:$('#tfNeg').checked,penalty:+$('#tfPen').value||0},createdAt:Date.now()};
+  c.tests.push(tt); saveData(); closeModal(); toast(t('saved')); nav('/key/'+tt.id); }; }
+async function delTest(bid,cid,tid){ if(!await confirmDialog(t('areYouSure'),t('confirmDelTest'),t('yesDelete'))) return; const b=findBook(bid); const c=b.chapters.find(x=>x.id===cid); c.tests=c.tests.filter(x=>x.id!==tid); delete D.drafts[tid]; saveData(); toast(t('deleted'),'info'); route(); }
+function moveTest(bid,cid,tid,dir){ const b=findBook(bid); const c=b.chapters.find(x=>x.id===cid); const i=c.tests.findIndex(x=>x.id===tid); const j=i+dir; if(j<0||j>=c.tests.length) return; [c.tests[i],c.tests[j]]=[c.tests[j],c.tests[i]]; saveData(); route(); }
+
+// ---------------- Subjects / Chapters / Sheets / Keys pages ----------------
+function renderSubjects(){ const v=$('#view'); const subs=uniqueSubjects();
+ const map={}; subs.forEach(s=>map[s]={books:[],attempts:[]});
+ D.books.forEach(b=>{ const s=(b.subject||'').trim(); if(map[s]) map[s].books.push(b); });
+ D.attempts.forEach(a=>{ const b=findBook(a.bookId); if(b){ const s=(b.subject||'').trim(); if(map[s]) map[s].attempts.push(a); } });
+ v.innerHTML=`<div class="max-w-6xl mx-auto space-y-5">
+ ${subs.length?`<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">${subs.map(s=>{ const g=aggregate(map[s].attempts); const tc=map[s].books.reduce((x,b)=>x+bookTestCount(b),0);
+  return `<div class="card p-6 anim hover:shadow-xl transition cursor-pointer" onclick="bookSearch='${esc(s)}';nav('/books')"><div class="flex items-center gap-3 mb-4"><div class="w-11 h-11 rounded-xl bg-cyan-100 dark:bg-cyan-500/15 text-cyan-500 flex items-center justify-center">${icon('beaker','w-5 h-5')}</div><h3 class="font-extrabold text-lg">${esc(s)}</h3></div>
+  <div class="flex gap-4 text-xs font-bold text-slate-400 mb-3"><span>${dnum(map[s].books.length)} ${t('books').toLowerCase()}</span><span>${dnum(tc)} ${t('tests')}</span><span>${dnum(g.answered)} ${t('answered').toLowerCase()}</span></div>
+  <div class="flex items-center gap-2">${bar(g.accuracy,'#06b6d4')}<span class="text-xs font-extrabold ${accColor(g.accuracy)}">${g.answered?pct(g.accuracy,0):'—'}</span></div></div>`; }).join('')}</div>`
+ :emptyState('beaker',t('subjects'),t('noBooksMsg'),`<button class="btn btn-primary" onclick="bookForm()">${icon('plus','w-4 h-4')}${t('addBook')}</button>`)}
+ </div>`; }
+function renderChapters(){ const v=$('#view'); const agg=chapterAgg(D.attempts); const rows=[];
+ D.books.forEach(b=>(b.chapters||[]).forEach(c=>{ const a=agg[c.id]||{correct:0,incorrect:0,unanswered:0}; const ans=a.correct+a.incorrect; rows.push({b,c,a,acc:ans?a.correct/ans*100:null,tests:c.tests.length}); }));
+ v.innerHTML=`<div class="max-w-6xl mx-auto space-y-5">
+ ${rows.length?`<div class="card overflow-hidden anim"><div class="overflow-x-auto"><table class="w-full min-w-[720px]"><thead><tr><th class="th">${t('chapter')}</th><th class="th">${t('book')}</th><th class="th">${t('subject')}</th><th class="th">${t('tests')}</th><th class="th">${t('answeredCol')}</th><th class="th">${t('accuracyCol')}</th></tr></thead><tbody>
+ ${rows.map(r=>`<tr class="border-t border-slate-100 dark:border-slate-700/60 hover:bg-slate-50 dark:hover:bg-slate-700/30 cursor-pointer" onclick="nav('/book/${r.b.id}')"><td class="td font-bold">${esc(r.c.title)}</td><td class="td">${esc(r.b.title)}</td><td class="td">${esc(r.b.subject||'—')}</td><td class="td">${dnum(r.tests)}</td><td class="td">${dnum(r.a.correct+r.a.incorrect)}</td><td class="td">${r.acc==null?'<span class="text-slate-400">—</span>':accBadge(r.acc)}</td></tr>`).join('')}
+ </tbody></table></div></div>`:emptyState('bookmark',t('noChapters'),t('noBooksMsg'),`<button class="btn btn-primary" onclick="bookForm()">${icon('plus','w-4 h-4')}${t('addBook')}</button>`)}
+ </div>`; }
+function renderSheets(){ const v=$('#view'); const tests=allTests();
+ v.innerHTML=`<div class="max-w-6xl mx-auto space-y-5">
+ ${tests.length?`<div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">${tests.map(x=>{ const ats=attemptsForTest(x.test.id); const last=ats[0]; const best=ats.reduce((m,a)=>Math.max(m,a.results.accuracy),0); const draft=D.drafts[x.test.id]; const kc=keyCount(x.test);
+  return `<div class="card p-5 anim hover:shadow-lg transition flex flex-col">
+   <div class="flex items-start gap-3 mb-3"><div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-500/15 text-indigo-500 flex items-center justify-center flex-shrink-0">${icon('doc','w-5 h-5')}</div>
+   <div class="min-w-0 flex-1"><h3 class="font-extrabold truncate">${esc(x.test.title)}</h3><p class="text-xs text-slate-400 truncate">${esc(x.book.title)} • ${esc(x.chapter.title)}</p></div>
+   ${draft?`<span class="badge bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">${t('inProgress')}</span>`:''}</div>
+   <div class="flex gap-3 text-xs font-bold text-slate-400 mb-3"><span>${dnum(x.test.questionCount)} ${t('questionsL')}</span><span>${dnum(kc)}/${dnum(x.test.questionCount)} ${t('keyCompleteShort')}</span><span>${dnum(ats.length)} ${t('attempts').toLowerCase()}</span></div>
+   <div class="flex items-center gap-2 mb-4 text-xs"><span class="text-slate-400 font-bold">${t('bestAcc')}</span>${ats.length?accBadge(best):'<span class="text-slate-400">—</span>'}</div>
+   <div class="flex gap-2 mt-auto no-print">
+    <button class="btn btn-primary flex-1 !py-2" onclick="nav('/test/${x.test.id}')">${icon('play','w-4 h-4')}${draft?t('continueTest'):t('start')}</button>
+    <button class="icon-btn" title="${t('answerKey')}" onclick="nav('/key/${x.test.id}')">${icon('key','w-4 h-4')}</button>
+    <button class="icon-btn" title="${t('printBlank')}" onclick="printBlankSheet('${x.test.id}')">${icon('printer','w-4 h-4')}</button>
+   </div></div>`; }).join('')}</div>`
+ :emptyState('doc',t('noTests'),t('noTestsYet2'),`<button class="btn btn-primary" onclick="nav('/books')">${icon('book','w-4 h-4')}${t('myBooks')}</button>`)}
+ </div>`; }
+function renderKeys(){ const v=$('#view'); const tests=allTests();
+ v.innerHTML=`<div class="max-w-5xl mx-auto space-y-4">
+ ${tests.length?tests.map(x=>{ const kc=keyCount(x.test); const pc=x.test.questionCount?kc/x.test.questionCount*100:0;
+  return `<div class="card p-5 anim flex flex-wrap items-center gap-4">
+   <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/15 text-amber-500 flex items-center justify-center flex-shrink-0">${icon('key','w-5 h-5')}</div>
+   <div class="flex-1 min-w-[180px]"><h3 class="font-extrabold">${esc(x.test.title)}</h3><p class="text-xs text-slate-400">${esc(x.book.title)} • ${esc(x.chapter.title)}</p></div>
+   <div class="w-40"><div class="flex justify-between text-xs font-bold mb-1"><span class="text-slate-400">${t('keyCompleteness')}</span><span class="${pc>=100?'text-emerald-500':'text-amber-500'}">${dnum(kc)}/${dnum(x.test.questionCount)}</span></div>${bar(pc,pc>=100?'#10b981':'#f59e0b')}</div>
+   <button class="btn btn-primary !py-2 no-print" onclick="nav('/key/${x.test.id}')">${icon('pencil','w-4 h-4')}${t('edit')}</button>
+  </div>`; }).join(''):emptyState('key',t('noTests'),t('noTestsYet2'),`<button class="btn btn-primary" onclick="nav('/books')">${icon('book','w-4 h-4')}${t('myBooks')}</button>`)}
+ </div>`; }
+
+// ---------------- Key Editor ----------------
+let KE=null;
+function renderKeyEditor(tid){ const f=findTest(tid); if(!f) return nav('/keys');
+ KE={tid,book:f.book,chapter:f.chapter,title:f.test.title,count:f.test.questionCount,opts:f.test.optionsCount,key:{...(f.test.key||{})},exp:{...(f.test.explanations||{})},qtext:{...(f.test.questions||{})},qch:{...(f.test.qChapters||{})},neg:f.test.scoring?!!f.test.scoring.negative:false,penalty:f.test.scoring?f.test.scoring.penalty:0.25,dirty:false};
+ const v=$('#view'); const ats=attemptsForTest(tid);
+ v.innerHTML=`<div class="max-w-6xl mx-auto space-y-5">
+ <div class="card p-6 anim">
+  <div class="flex flex-wrap items-center gap-4 mb-5">
+   <div class="w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-500/15 text-amber-500 flex items-center justify-center">${icon('key','w-5 h-5')}</div>
+   <div class="flex-1 min-w-[200px]"><h1 class="text-xl font-extrabold">${t('keyEditor')}</h1><p class="text-xs text-slate-400">${esc(f.book.title)} • ${esc(f.chapter.title)}</p></div>
+   <button class="btn btn-ghost no-print" onclick="nav('/book/${f.book.id}')">${icon('chevL','w-4 h-4')}${t('back')}</button>
+   <button class="btn btn-primary no-print" id="keSave">${icon('check','w-4 h-4')}${t('save')}</button>
+  </div>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+   <div><label class="label">${t('testTitle')}</label><input id="keTitle" class="input" value="${esc(KE.title)}"></div>
+   <div><label class="label">${t('numQuestions')}</label><input id="keCount" type="number" min="0" max="500" class="input" value="${KE.count}"></div>
+   <div><label class="label">${t('optionsCount')}</label><select id="keOpts" class="input"><option value="4" ${KE.opts===4?'selected':''}>${t('four')}</option><option value="5" ${KE.opts===5?'selected':''}>${t('five')}</option></select></div>
+   <div><label class="label">${t('penalty')}</label><input id="kePen" type="number" step="0.05" min="0" class="input" value="${KE.penalty}"></div>
+  </div>
+  <div class="flex flex-wrap items-center gap-3">
+   <label class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/50 cursor-pointer text-sm font-bold"><input type="checkbox" id="keNeg" class="w-4 h-4 accent-indigo-600" ${KE.neg?'checked':''}>${t('enableNeg')}</label>
+   <button class="btn btn-ghost !py-2 no-print" id="keImport">${icon('upload','w-4 h-4')}${t('importCSV')}</button>
+   <button class="btn btn-ghost !py-2 no-print" id="kePrint">${icon('printer','w-4 h-4')}${t('printBlank')}</button>
+   ${ats.length?`<button class="btn btn-ghost !py-2 no-print" id="keRegrade">${icon('refresh','w-4 h-4')}${t('regradeAttempts')} (${dnum(ats.length)})</button>`:''}
+   <div class="flex-1"></div>
+   <div class="w-44"><div class="flex justify-between text-xs font-bold mb-1"><span class="text-slate-400">${t('keyCompleteness')}</span><span id="keKc" class="text-amber-500"></span></div><div id="keBar">${bar(0,'#f59e0b')}</div></div>
+  </div>
+ </div>
+ <div class="card p-4 md:p-6 anim">
+  <div class="hidden lg:grid grid-cols-[2.5rem_auto_9rem_1fr_1fr] gap-3 px-2 pb-2 border-b border-slate-100 dark:border-slate-700 text-[11px] font-bold uppercase tracking-wider text-slate-400"><span>#</span><span>${t('correctAnswer')}</span><span>${t('chapterAssign')}</span><span>${t('questionTextOpt')}</span><span>${t('explanationOpt')}</span></div>
+  <div id="keGrid" class="divide-y divide-slate-100 dark:divide-slate-700/60"></div>
+ </div>
+ </div>`;
+ renderKeyGrid();
+ $('#keSave').onclick=saveKeyEditor;
+ $('#keImport').onclick=importKeyModal;
+ $('#kePrint').onclick=()=>{ saveKeyEditor(true); printBlankSheet(KE.tid); };
+ const rg=$('#keRegrade'); if(rg) rg.onclick=async()=>{ saveKeyEditor(true); let n=0; attemptsForTest(KE.tid).forEach(a=>{ regradeAttempt(a.id,true); n++; }); saveData(); toast(dnum(n)+' '+t('regradeAllDone')); route(); };
+ ['keTitle','keCount','keOpts','kePen','keNeg'].forEach(id=>{ $('#'+id).addEventListener('change',()=>{ KE.title=$('#keTitle').value; KE.count=clamp(parseInt($('#keCount').value)||0,0,500); KE.opts=+$('#keOpts').value; KE.penalty=+$('#kePen').value||0; KE.neg=$('#keNeg').checked; KE.dirty=true; if(id==='keCount'||id==='keOpts') renderKeyGrid(); updateKeyBar(); }); });
+}
+function renderKeyGrid(){ const g=$('#keGrid'); const letters=LETTERS(KE.opts); const chapters=KE.book.chapters||[];
+ let html='';
+ for(let i=1;i<=KE.count;i++){ html+=`<div class="grid grid-cols-[2.5rem_1fr] lg:grid-cols-[2.5rem_auto_9rem_1fr_1fr] gap-2 lg:gap-3 items-center py-2.5 px-2" data-q="${i}">
+  <span class="font-extrabold text-slate-400 text-sm">${dnum(i)}</span>
+  <div class="flex gap-1.5">${letters.map(L=>`<button class="kopt ${KE.key[i]===L?'!bg-indigo-600 !text-white !border-indigo-600':'bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-indigo-400'}" data-q="${i}" data-l="${L}">${L}</button>`).join('')}</div>
+  <select class="input !py-1.5 !text-xs kch" data-q="${i}"><option value="">${t('defaultChapter')}</option>${chapters.map(c=>`<option value="${c.id}" ${KE.qch[i]===c.id?'selected':''}>${esc(c.title)}</option>`).join('')}</select>
+  <input class="input !py-1.5 !text-xs ktext" data-q="${i}" placeholder="${t('questionTextOpt')}" value="${esc(KE.qtext[i]||'')}">
+  <input class="input !py-1.5 !text-xs kexp" data-q="${i}" placeholder="${t('explanationOpt')}" value="${esc(KE.exp[i]||'')}">
+ </div>`; }
+ g.innerHTML=html||`<p class="text-sm text-slate-400 text-center py-8">${t('emptyTestErr')}</p>`;
+ g.querySelectorAll('.kopt').forEach(b=>b.onclick=()=>{ const q=+b.dataset.q,l=b.dataset.l; if(KE.key[q]===l) delete KE.key[q]; else KE.key[q]=l; KE.dirty=true; renderKeyGrid(); updateKeyBar(); });
+ g.querySelectorAll('.kch').forEach(s=>s.onchange=()=>{ const q=+s.dataset.q; if(s.value) KE.qch[q]=s.value; else delete KE.qch[q]; KE.dirty=true; });
+ g.querySelectorAll('.ktext').forEach(s=>s.onchange=()=>{ const q=+s.dataset.q; if(s.value.trim()) KE.qtext[q]=s.value.trim(); else delete KE.qtext[q]; KE.dirty=true; });
+ g.querySelectorAll('.kexp').forEach(s=>s.onchange=()=>{ const q=+s.dataset.q; if(s.value.trim()) KE.exp[q]=s.value.trim(); else delete KE.exp[q]; KE.dirty=true; });
+ updateKeyBar(); }
+function updateKeyBar(){ const kc=Object.keys(KE.key).length; const pc=KE.count?kc/KE.count*100:0; const el=$('#keKc'); if(el){ el.textContent=dnum(kc)+'/'+dnum(KE.count); el.className=pc>=100?'text-emerald-500':'text-amber-500'; $('#keBar').innerHTML=bar(pc,pc>=100?'#10b981':'#f59e0b'); } }
+function saveKeyEditor(silent){ if(!KE) return; const f=findTest(KE.tid); if(!f) return;
+ // capture current grid inputs
+ $$('#keGrid .ktext').forEach(s=>{ const q=+s.dataset.q; if(s.value.trim()) KE.qtext[q]=s.value.trim(); else delete KE.qtext[q]; });
+ $$('#keGrid .kexp').forEach(s=>{ const q=+s.dataset.q; if(s.value.trim()) KE.exp[q]=s.value.trim(); else delete KE.exp[q]; });
+ $$('#keGrid .kch').forEach(s=>{ const q=+s.dataset.q; if(s.value) KE.qch[q]=s.value; else delete KE.qch[q]; });
+ KE.title=$('#keTitle').value||KE.title; KE.count=clamp(parseInt($('#keCount').value)||0,0,500); KE.opts=+$('#keOpts').value; KE.penalty=+$('#kePen').value||0; KE.neg=$('#keNeg').checked;
+ // prune beyond count / opts
+ const valid=LETTERS(KE.opts); Object.keys(KE.key).forEach(q=>{ if(+q>KE.count||!valid.includes(KE.key[q])) delete KE.key[q]; });
+ Object.assign(f.test,{title:KE.title,questionCount:KE.count,optionsCount:KE.opts,key:KE.key,explanations:KE.exp,questions:KE.qtext,qChapters:KE.qch,scoring:{negative:KE.neg,penalty:KE.penalty}});
+ saveData(); KE.dirty=false; if(!silent) toast(t('saved')); }
+function importKeyModal(){ const m=openModal(`<h3 class="text-lg font-extrabold mb-2">${t('importCSV')}</h3><p class="text-xs text-slate-400 mb-3" dir="auto">${t('importKeyHelp')}</p>
+ <textarea id="csvIn" class="input font-mono text-xs" rows="8" dir="ltr" placeholder="1,B,Explanation…&#10;2,D&#10;3,A"></textarea>
+ <div class="flex gap-3 justify-between mt-4"><label class="btn btn-ghost cursor-pointer">${icon('upload','w-4 h-4')}CSV<input type="file" id="csvFile" accept=".csv,.txt" class="hidden"></label><div class="flex gap-2"><button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button><button class="btn btn-primary" id="csvGo">${t('import')}</button></div></div>`);
+ m.querySelector('#csvFile').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>$('#csvIn').value=r.result; r.readAsText(f); };
+ m.querySelector('#csvGo').onclick=()=>{ const parsed=parseKeyCSV($('#csvIn').value); if(!parsed) return toast(t('parseErr'),'error');
+  Object.assign(KE.key,parsed.key); Object.assign(KE.exp,parsed.exp); if(parsed.max>KE.count){ KE.count=parsed.max; $('#keCount').value=KE.count; }
+  KE.dirty=true; closeModal(); renderKeyGrid(); toast(t('keyImported')); }; }
+function parseKeyCSV(text){ const key={},exp={}; let max=0,found=false;
+ text.split(/\r?\n/).forEach(line=>{ const m=line.match(/^\s*(\d{1,4})\s*[,;:\-\t]\s*([A-Ea-e1-5])\s*(?:[,;:\-\t]\s*(.+?))?\s*$/); if(m){ const q=+m[1]; let a=m[2].toUpperCase(); if(/^[1-5]$/.test(a)) a='ABCDE'[+a-1]; key[q]=a; if(m[3]) exp[q]=m[3].trim(); max=Math.max(max,q); found=true; } });
+ return found?{key,exp,max}:null; }
+
+// ---------------- Answer Sheet (Test Session) ----------------
+let TS=null, timerInt=null;
+function stopTimer(){ if(timerInt){ clearInterval(timerInt); timerInt=null; } }
+function startTestSession(tid){ const f=findTest(tid); if(!f){ nav('/sheets'); return; }
+ const draft=D.drafts[tid];
+ TS={mode:'test',tid,book:f.book,chapter:f.chapter,test:f.test,total:f.test.questionCount,answers:draft?{...draft.answers}:{},marked:draft?{...draft.marked}:{},current:1,elapsedBase:draft?draft.elapsed||0:0,startTs:Date.now(),sessionStart:draft?draft.sessionStart||Date.now():Date.now(),submitting:false};
+ renderSheet(); if(draft) toast(t('draftResumed'),'info'); }
+function startPracticeSession(){ if(!window._practiceItems||!window._practiceItems.length){ nav('/analysis'); return; }
+ const items=window._practiceItems;
+ TS={mode:'practice',items,total:items.length,answers:{},marked:{},current:1,elapsedBase:0,startTs:Date.now(),sessionStart:Date.now(),submitting:false};
+ renderSheet(); }
+function elapsedSec(){ return TS.elapsedBase+(Date.now()-TS.startTs)/1000; }
+function saveDraft(){ if(!TS||TS.mode!=='test') return; D.drafts[TS.tid]={answers:TS.answers,marked:TS.marked,elapsed:elapsedSec(),sessionStart:TS.sessionStart,updatedAt:Date.now()}; saveData(); }
+function renderSheet(){ const v=$('#view'); const isP=TS.mode==='practice';
+ const title=isP?t('practiceSession'):TS.test.title; const sub=isP?t('practiceMode'):(TS.book.title+' • '+TS.chapter.title);
+ v.innerHTML=`<div class="max-w-6xl mx-auto space-y-5">
+ <div class="card p-4 md:p-5 anim sticky top-0 z-20 !shadow-lg">
+  <div class="flex flex-wrap items-center gap-3">
+   <div class="w-10 h-10 rounded-xl ${isP?'bg-fuchsia-100 dark:bg-fuchsia-500/15 text-fuchsia-500':'bg-indigo-100 dark:bg-indigo-500/15 text-indigo-500'} flex items-center justify-center flex-shrink-0">${icon(isP?'pulse':'doc','w-5 h-5')}</div>
+   <div class="flex-1 min-w-[160px]"><h1 class="font-extrabold truncate">${esc(title)}</h1><p class="text-xs text-slate-400 truncate">${esc(sub)}</p></div>
+   <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/60 font-mono font-extrabold text-sm" id="tsTimer">00:00:00</div>
+   <button class="btn btn-success !py-2 no-print" id="tsSubmit">${icon('check','w-4 h-4')}${t('submitTest')}</button>
+  </div>
+  <div class="flex items-center gap-3 mt-3"><div class="flex-1" id="tsProg"></div><span class="text-xs font-extrabold text-slate-400 whitespace-nowrap" id="tsProgTxt"></span></div>
+ </div>
+ <div class="grid lg:grid-cols-[1fr_280px] gap-5 items-start">
+  <div id="qArea"></div>
+  <div class="card p-5 anim lg:sticky lg:top-24">
+   <div class="flex items-center justify-between mb-3"><b class="text-sm">${t('questions')}</b><span class="text-xs text-slate-400">${t('keyboardHint')}</span></div>
+   <div id="palette" class="flex flex-wrap gap-1.5 mb-4"></div>
+   <div class="space-y-1.5 text-xs font-bold text-slate-400">
+    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-indigo-600 inline-block"></span>${t('answered')}</div>
+    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-amber-400 inline-block"></span>${t('marked')}</div>
+    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-slate-200 dark:bg-slate-600 inline-block"></span>${t('unanswered')}</div>
+   </div>
+  </div>
+ </div></div>`;
+ $('#tsSubmit').onclick=submitSession;
+ stopTimer(); timerInt=setInterval(()=>{ const el=$('#tsTimer'); if(el&&TS) el.textContent=fmtClock(elapsedSec()); },1000);
+ renderQuestion(); renderPalette(); updateSheetProgress(); }
+function curMeta(){ if(TS.mode==='practice'){ const it=TS.items[TS.current-1]; return {opts:it.optionsCount||4,qtext:null,ref:it.ref}; } return {opts:TS.test.optionsCount||4,qtext:(TS.test.questions||{})[TS.current],ref:null}; }
+function renderQuestion(){ const q=TS.current; const meta=curMeta(); const sel=TS.answers[q]; const marked=TS.marked[q]; const letters=LETTERS(meta.opts);
+ $('#qArea').innerHTML=`<div class="card p-6 md:p-8 anim">
+ <div class="flex items-center gap-3 mb-5">
+  <span class="badge bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300 !text-sm !px-3 !py-1">${t('question')} ${dnum(q)} ${t('of')} ${dnum(TS.total)}</span>
+  ${meta.ref?`<span class="text-xs text-slate-400 truncate">${t('questionFrom')}: ${esc(meta.ref)}</span>`:''}
+  <div class="flex-1"></div>
+  <button id="qMark" class="btn ${marked?'btn-primary':'btn-ghost'} !py-2 !px-3 text-xs">${icon('flag','w-4 h-4')}${marked?t('marked'):t('markReview')}</button>
+ </div>
+ ${meta.qtext?`<p class="text-base md:text-lg font-semibold leading-relaxed mb-6">${esc(meta.qtext)}</p>`:`<p class="text-sm text-slate-400 mb-6">${t('question')} #${dnum(q)}</p>`}
+ <div class="space-y-3" id="optList">
+  ${letters.map(L=>`<button class="opt ${sel===L?'!border-indigo-600 bg-indigo-50 dark:!bg-indigo-500/15 shadow-md':'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:border-indigo-400'}" data-l="${L}">
+   <span class="bubble ${sel===L?'bg-indigo-600 text-white':'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'}">${L}</span>
+   <span class="text-sm">${t('options')} ${L}</span>
+   ${sel===L?`<span class="ms-auto text-indigo-500">${icon('check','w-5 h-5')}</span>`:''}
+  </button>`).join('')}
+ </div>
+ <div class="flex items-center gap-2 mt-7">
+  <button id="qPrev" class="btn btn-ghost" ${q===1?'disabled':''}>${icon('chevL','w-4 h-4')}${t('previous')}</button>
+  <button id="qClear" class="btn btn-ghost" ${!sel?'disabled':''}>${icon('x','w-4 h-4')}${t('clear')}</button>
+  <div class="flex-1"></div>
+  <button id="qNext" class="btn btn-primary" ${q===TS.total?'disabled':''}>${t('next')}${icon('chevR','w-4 h-4')}</button>
+ </div></div>`;
+ $('#optList').querySelectorAll('.opt').forEach(b=>b.onclick=()=>selectAnswer(b.dataset.l));
+ $('#qMark').onclick=()=>{ if(TS.marked[TS.current]) delete TS.marked[TS.current]; else TS.marked[TS.current]=true; saveDraft(); renderQuestion(); renderPalette(); };
+ $('#qPrev').onclick=()=>gotoQ(TS.current-1);
+ $('#qNext').onclick=()=>gotoQ(TS.current+1);
+ $('#qClear').onclick=()=>{ delete TS.answers[TS.current]; saveDraft(); renderQuestion(); renderPalette(); updateSheetProgress(); }; }
+function selectAnswer(L){ TS.answers[TS.current]=L; saveDraft(); renderQuestion(); renderPalette(); updateSheetProgress();
+ if(TS.current<TS.total){ setTimeout(()=>{ if(TS) gotoQ(TS.current+1); },220); } }
+function gotoQ(q){ if(q<1||q>TS.total) return; TS.current=q; renderQuestion(); renderPalette(); }
+function renderPalette(){ const p=$('#palette'); if(!p||!TS) return; let html='';
+ for(let i=1;i<=TS.total;i++){ const an=!!TS.answers[i], mk=!!TS.marked[i];
+  const cls=mk?'bg-amber-400 text-amber-900 border-amber-400':an?'bg-indigo-600 text-white border-indigo-600':'bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600';
+  html+=`<button class="pal ${cls} ${i===TS.current?'ring-2 ring-offset-2 ring-indigo-500 dark:ring-offset-slate-800':''}" data-q="${i}">${dnum(i)}${mk&&an?'<span class="dot"></span>':''}</button>`; }
+ p.innerHTML=html; p.querySelectorAll('.pal').forEach(b=>b.onclick=()=>gotoQ(+b.dataset.q)); }
+function updateSheetProgress(){ const n=Object.keys(TS.answers).length; const pc=TS.total?n/TS.total*100:0; const pr=$('#tsProg'); if(pr){ pr.innerHTML=bar(pc,'linear-gradient(90deg,#6366f1,#a855f7)'); $('#tsProgTxt').textContent=dnum(n)+'/'+dnum(TS.total)+' '+t('answered'); } }
+async function submitSession(){ if(!TS||TS.submitting) return;
+ if(TS.total===0) return toast(t('emptyTestErr'),'error');
+ if(TS.mode==='test'&&Object.keys(TS.test.key||{}).length===0) return toast(t('noKeyErr'),'error');
+ const answeredN=Object.keys(TS.answers).length; const un=TS.total-answeredN;
+ const ok=await confirmDialog(t('submitTest'),dnum(answeredN)+'/'+dnum(TS.total)+' '+t('answered')+(un?' — '+dnum(un)+' '+t('unansweredWarn'):''),t('submitTest'),false);
+ if(!ok) return; TS.submitting=true; stopTimer();
+ const timeSpent=Math.round(elapsedSec()); let attempt;
+ if(TS.mode==='test'){
+  const key=TS.test.key||{}; const g=gradeCompute(TS.answers,key,TS.total,TS.test.scoring);
+  attempt={id:uid(),testId:TS.tid,bookId:TS.book.id,chapterId:TS.chapter.id,title:TS.test.title,bookTitle:TS.book.title,chapterTitle:TS.chapter.title,questionCount:TS.total,optionsCount:TS.test.optionsCount,answers:{...TS.answers},marked:{...TS.marked},keySnapshot:{...key},explanationsSnapshot:{...(TS.test.explanations||{})},qChapters:{...(TS.test.qChapters||{})},detail:g.detail,unkeyed:g.unkeyed,results:g.results,scoring:{...(TS.test.scoring||{})},timeSpent,startedAt:TS.sessionStart,submittedAt:Date.now()};
+  delete D.drafts[TS.tid];
+ } else {
+  const detail={}; let correct=0,incorrect=0,unanswered=0; const keySnap={},expSnap={},qch={};
+  TS.items.forEach((it,idx)=>{ const q=idx+1; const a=TS.answers[q]; keySnap[q]=it.key; if(it.explanation) expSnap[q]=it.explanation; if(it.chapterId) qch[q]=it.chapterId;
+   if(!a){ detail[q]='unanswered'; unanswered++; } else if(a===it.key){ detail[q]='correct'; correct++; } else { detail[q]='incorrect'; incorrect++; } });
+  const answered=correct+incorrect;
+  attempt={id:uid(),practice:true,testId:null,bookId:null,chapterId:null,title:t('practiceSession'),bookTitle:t('multiple'),chapterTitle:t('practice'),questionCount:TS.total,optionsCount:5,answers:{...TS.answers},marked:{...TS.marked},items:TS.items.map(it=>({...it})),keySnapshot:keySnap,explanationsSnapshot:expSnap,qChapters:qch,detail,unkeyed:0,results:{total:TS.total,correct,incorrect,unanswered,answered,accuracy:answered===0?0:correct/answered*100,completion:TS.total===0?0:answered/TS.total*100,score:correct,maxScore:TS.total},scoring:{negative:false,penalty:0},timeSpent,startedAt:TS.sessionStart,submittedAt:Date.now()};
+ }
+ D.attempts.unshift(attempt); saveData(); const aid=attempt.id; TS=null; toast(t('testSubmitted')); nav('/results/'+aid); }
+document.addEventListener('keydown',e=>{ if(!TS) return; if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+ const k=e.key.toUpperCase(); const meta=curMeta();
+ if(LETTERS(meta.opts).includes(k)){ selectAnswer(k); }
+ else if(e.key==='ArrowRight'){ gotoQ(LANG==='fa'?TS.current-1:TS.current+1); }
+ else if(e.key==='ArrowLeft'){ gotoQ(LANG==='fa'?TS.current+1:TS.current-1); } });
+window.addEventListener('beforeunload',e=>{ if(TS){ saveDraft(); e.preventDefault(); e.returnValue=''; } });
+
+// ---------------- Results / Review ----------------
+function renderResults(aid){ const a=D.attempts.find(x=>x.id===aid); if(!a) return nav('/history'); const v=$('#view'); const r=a.results;
+ const f=a.testId?findTest(a.testId):null;
+ const curKey=f?f.test.key:a.keySnapshot; const keyChanged=f&&JSON.stringify(f.test.key||{})!==JSON.stringify(a.keySnapshot||{});
+ const letters=LETTERS(a.optionsCount||4);
+ let rows='';
+ for(let i=1;i<=a.questionCount;i++){ const st=a.detail?a.detail[i]:(a.answers[i]?(a.keySnapshot[i]===a.answers[i]?'correct':'incorrect'):'unanswered');
+  const your=a.answers[i]; const corr=(a.keySnapshot||{})[i]; const exp=(a.explanationsSnapshot||{})[i]; const item=a.items?a.items[i-1]:null;
+  const chId=(a.qChapters||{})[i]||a.chapterId; const chN=chId?chapterName(chId):null;
+  const border=st==='correct'?'border-emerald-400 dark:border-emerald-500/50':st==='incorrect'?'border-rose-400 dark:border-rose-500/50':'border-slate-200 dark:border-slate-600';
+  const chip=st==='correct'?`<span class="badge bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">${t('correct')}</span>`:st==='incorrect'?`<span class="badge bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400">${t('incorrect')}</span>`:`<span class="badge bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">${t('unanswered')}</span>`;
+  rows+=`<div class="card p-4 border-s-4 ${border} anim">
+   <div class="flex flex-wrap items-center gap-2 mb-2"><b class="text-slate-400">${dnum(i)}</b>${chip}
+   ${item&&item.ref?`<span class="text-xs text-slate-400">${esc(item.ref)}</span>`:''}
+   ${chN?`<span class="badge bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">${esc(chN.name)}</span>`:''}
+   <div class="flex-1"></div>
+   <div class="flex gap-1.5">${letters.map(L=>{ let c='bg-slate-50 dark:bg-slate-900/50 text-slate-400 border-slate-200 dark:border-slate-600';
+     if(L===corr&&L===your) c='bg-emerald-500 text-white border-emerald-500';
+     else if(L===corr) c='bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40';
+     else if(L===your) c='bg-rose-500 text-white border-rose-500';
+     return `<span class="kopt !cursor-default border ${c}" title="${L===corr?t('correctAnswer'):''}">${L}</span>`; }).join('')}</div>
+   </div>
+   <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs font-bold text-slate-500 dark:text-slate-400">
+    <span>${t('yourAnswer')}: <b class="${st==='correct'?'text-emerald-500':st==='incorrect'?'text-rose-500':'text-slate-400'}">${your||'—'}</b></span>
+    <span>${t('correctAnswer')}: <b class="text-emerald-500">${corr||t('unkeyedExcluded')}</b></span>
+   </div>
+   ${exp?`<div class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3"><b class="text-indigo-500">${t('explanation')}:</b> ${esc(exp)}</div>`:''}
+  </div>`; }
+ v.innerHTML=`<div class="max-w-4xl mx-auto space-y-5">
+ <div class="card p-6 md:p-8 anim">
+  <div class="flex flex-wrap items-center gap-6">
+   <div class="relative">${ringSVG(r.accuracy,120,11,r.accuracy>=80?'#10b981':r.accuracy>=60?'#f59e0b':'#f43f5e')}<div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-3xl font-extrabold ${accColor(r.accuracy)}">${pct(r.accuracy,0)}</span><span class="text-[10px] font-bold text-slate-400 uppercase">${t('accuracy')}</span></div></div>
+   <div class="flex-1 min-w-[220px]">
+    <div class="flex flex-wrap items-center gap-2 mb-1"><h1 class="text-xl font-extrabold">${esc(a.title)}</h1>${a.practice?`<span class="badge bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-500/15 dark:text-fuchsia-400">${t('practiceMode')}</span>`:''}</div>
+    <p class="text-sm text-slate-400 mb-3">${esc(a.bookTitle)}${a.chapterTitle?' • '+esc(a.chapterTitle):''} • ${fmtDT(a.submittedAt)}</p>
+    <div class="flex flex-wrap gap-2">
+     <span class="badge bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">${dnum(r.correct)} ${t('correct')}</span>
+     <span class="badge bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400">${dnum(r.incorrect)} ${t('incorrect')}</span>
+     <span class="badge bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">${dnum(r.unanswered)} ${t('unanswered')}</span>
+     <span class="badge bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">${t('score')}: ${fmtScore(r.score)} / ${dnum(r.maxScore)}</span>
+     <span class="badge bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400">${icon('clock','w-3.5 h-3.5')}${fmtDur(a.timeSpent)}</span>
+     <span class="badge bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">${t('completion')}: ${pct(r.completion,0)}</span>
+    </div>
+    ${a.unkeyed?`<p class="text-xs text-amber-500 font-bold mt-2">${dnum(a.unkeyed)} ${t('unkeyedNote')}</p>`:''}
+    ${keyChanged?`<p class="text-xs text-amber-500 font-bold mt-2 flex items-center gap-1">${icon('alert','w-3.5 h-3.5')}${t('keyChanged')}</p>`:''}
+   </div>
+  </div>
+  <div class="flex flex-wrap gap-2 mt-6 no-print">
+   ${f?`<button class="btn btn-primary" onclick="nav('/test/${a.testId}')">${icon('refresh','w-4 h-4')}${t('retake')}</button>`:''}
+   <button class="btn btn-ghost" onclick="practiceFromAttempt('${a.id}')">${icon('pulse','w-4 h-4')}${t('practiceMistakes')}</button>
+   ${f?`<button class="btn btn-ghost" onclick="regradeAttemptUI('${a.id}')">${icon('key','w-4 h-4')}${t('regrade')}</button>`:''}
+   <button class="btn btn-ghost" onclick="window.print()">${icon('printer','w-4 h-4')}${t('printReport')}</button>
+   <div class="flex-1"></div>
+   <button class="btn btn-ghost" onclick="nav('/history')">${t('history')}</button>
+  </div>
+ </div>
+ <h2 class="font-extrabold text-lg anim">${t('reviewAnswers')}</h2>
+ <div class="space-y-3">${rows}</div>
+ </div>`; }
+function regradeAttempt(aid,silent){ const a=D.attempts.find(x=>x.id===aid); if(!a||a.practice) return false; const f=findTest(a.testId); const key=f?f.test.key:a.keySnapshot;
+ const g=gradeCompute(a.answers,key,a.questionCount,f?f.test.scoring:a.scoring);
+ a.detail=g.detail; a.unkeyed=g.unkeyed; a.results=g.results; a.keySnapshot={...key}; if(f) a.explanationsSnapshot={...(f.test.explanations||{})};
+ if(!silent) saveData(); return true; }
+async function regradeAttemptUI(aid){ const ok=await confirmDialog(t('regrade'),t('keyChanged')||'',t('regrade'),false); if(!ok) return; regradeAttempt(aid); saveData(); toast(t('regraded')); route(); }
+function practiceFromAttempt(aid){ const a=D.attempts.find(x=>x.id===aid); if(!a) return; const items=[];
+ for(let i=1;i<=a.questionCount;i++){ const st=a.detail?a.detail[i]:null; if(st==='correct') continue;
+  let key,exp,opts=a.optionsCount||4;
+  if(a.practice){ const it=a.items[i-1]; key=it.key; exp=it.explanation; opts=it.optionsCount||4; }
+  else { const f=findTest(a.testId); key=f?(f.test.key||{})[i]:(a.keySnapshot||{})[i]; exp=f?(f.test.explanations||{})[i]:(a.explanationsSnapshot||{})[i]; if(f) opts=f.test.optionsCount; }
+  if(!key) continue;
+  items.push({testId:a.testId,qNum:i,key,explanation:exp,optionsCount:opts,ref:a.bookTitle+' • '+a.title+' • Q'+i,chapterId:(a.qChapters||{})[i]||a.chapterId}); }
+ if(!items.length) return toast(t('noMistakes'),'info');
+ window._practiceItems=items; nav('/practice'); toast(t('practiceBuilt'),'info'); }
+
+// ---------------- History ----------------
+let HF={book:'',from:'',to:'',minAcc:'',q:''};
+function renderHistory(){ const v=$('#view');
+ v.innerHTML=`<div class="max-w-7xl mx-auto space-y-5">
+ <div class="card p-5 anim no-print">
+  <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+   <div><label class="label">${t('book')}</label><select id="hfBook" class="input"><option value="">${t('allBooks')}</option>${D.books.map(b=>`<option value="${b.id}" ${HF.book===b.id?'selected':''}>${esc(b.title)}</option>`).join('')}</select></div>
+   <div><label class="label">${t('from')}</label><input id="hfFrom" type="date" class="input" value="${HF.from}"></div>
+   <div><label class="label">${t('to')}</label><input id="hfTo" type="date" class="input" value="${HF.to}"></div>
+   <div><label class="label">${t('minAccuracy')}</label><input id="hfAcc" type="number" min="0" max="100" class="input" value="${HF.minAcc}"></div>
+   <div><label class="label">${t('globalSearch')}</label><input id="hfQ" class="input" placeholder="${t('searchHistory')}" value="${esc(HF.q)}"></div>
+  </div>
+  <div class="flex gap-2 mt-3">
+   <button class="btn btn-ghost !py-2" id="hfReset">${icon('x','w-4 h-4')}${t('reset')}</button>
+   <div class="flex-1"></div>
+   <button class="btn btn-ghost !py-2" id="hfRegrade">${icon('refresh','w-4 h-4')}${t('regradeAll')}</button>
+   <button class="btn btn-primary !py-2" id="hfCsv">${icon('download','w-4 h-4')}${t('exportCSV')}</button>
+  </div>
+ </div>
+ <div class="card overflow-hidden anim"><div class="overflow-x-auto"><table class="w-full min-w-[860px]"><thead><tr><th class="th">${t('dateTime')}</th><th class="th">${t('test')}</th><th class="th">${t('book')}</th><th class="th">${t('questions')}</th><th class="th">${t('correct')}</th><th class="th">${t('incorrect')}</th><th class="th">${t('accuracy')}</th><th class="th">${t('score')}</th><th class="th">${t('time')}</th><th class="th text-end">${t('actions')}</th></tr></thead><tbody id="hfBody"></tbody></table></div></div>
+ </div>`;
+ const bind=(id,ev)=>$('#'+id).addEventListener(ev,()=>{ HF={book:$('#hfBook').value,from:$('#hfFrom').value,to:$('#hfTo').value,minAcc:$('#hfAcc').value,q:$('#hfQ').value}; renderHistoryBody(); });
+ bind('hfBook','change'); bind('hfFrom','change'); bind('hfTo','change'); bind('hfAcc','change'); bind('hfQ','input');
+ $('#hfReset').onclick=()=>{ HF={book:'',from:'',to:'',minAcc:'',q:''}; route(); };
+ $('#hfCsv').onclick=exportHistoryCSV;
+ $('#hfRegrade').onclick=async()=>{ const ok=await confirmDialog(t('regradeAll'),t('areYouSure'),t('regrade'),false); if(!ok) return; let n=0; D.attempts.forEach(a=>{ if(regradeAttempt(a.id,true)) n++; }); saveData(); toast(dnum(n)+' '+t('regradeAllDone')); route(); };
+ renderHistoryBody(); }
+function filteredAttempts(){ let list=D.attempts;
+ if(HF.book) list=list.filter(a=>a.bookId===HF.book);
+ if(HF.from){ const s=new Date(HF.from+'T00:00:00').getTime(); list=list.filter(a=>a.submittedAt>=s); }
+ if(HF.to){ const e=new Date(HF.to+'T23:59:59').getTime(); list=list.filter(a=>a.submittedAt<=e); }
+ if(HF.minAcc!==''&&HF.minAcc!=null){ const m=+HF.minAcc; list=list.filter(a=>a.results.accuracy>=m); }
+ if(HF.q){ const q=HF.q.toLowerCase(); list=list.filter(a=>(a.title+' '+a.bookTitle+' '+(a.chapterTitle||'')).toLowerCase().includes(q)); }
+ return list; }
+function renderHistoryBody(){ const list=filteredAttempts(); const tb=$('#hfBody'); if(!tb) return;
+ tb.innerHTML=list.length?list.slice(0,200).map(a=>`<tr class="border-t border-slate-100 dark:border-slate-700/60 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+  <td class="td whitespace-nowrap">${fmtDT(a.submittedAt)}</td>
+  <td class="td font-bold">${a.practice?`<span class="badge bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-500/15 dark:text-fuchsia-400 me-1">${t('practice')}</span>`:''}${esc(a.title)}</td>
+  <td class="td">${esc(a.bookTitle)}</td>
+  <td class="td">${dnum(a.questionCount)}</td>
+  <td class="td text-emerald-500 font-bold">${dnum(a.results.correct)}</td>
+  <td class="td text-rose-500 font-bold">${dnum(a.results.incorrect)}</td>
+  <td class="td">${accBadge(a.results.accuracy)}</td>
+  <td class="td font-bold">${fmtScore(a.results.score)}</td>
+  <td class="td whitespace-nowrap">${fmtDur(a.timeSpent)}</td>
+  <td class="td"><div class="flex gap-1 justify-end">
+   <button class="icon-btn !text-indigo-500" title="${t('viewAttempt')}" onclick="nav('/results/${a.id}')">${icon('search','w-4 h-4')}</button>
+   ${a.testId?`<button class="icon-btn" title="${t('regradeAttempt')}" onclick="regradeAttemptUI('${a.id}')">${icon('refresh','w-4 h-4')}</button>`:''}
+   <button class="icon-btn hover:!text-rose-500" title="${t('deleteAttempt')}" onclick="delAttempt('${a.id}')">${icon('trash','w-4 h-4')}</button>
+  </div></td></tr>`).join(''):`<tr><td colspan="10" class="td text-center py-10 text-slate-400">${t('noAttempts')}</td></tr>`; }
+async function delAttempt(aid){ if(!await confirmDialog(t('areYouSure'),t('confirmDelAttempt'),t('yesDelete'))) return; D.attempts=D.attempts.filter(a=>a.id!==aid); saveData(); toast(t('deleted'),'info'); renderHistoryBody(); }
+function exportHistoryCSV(){ const list=filteredAttempts();
+ const rows=[['Date','Time','Book','Chapter','Test','Mode','Questions','Correct','Incorrect','Unanswered','Accuracy %','Completion %','Score','Max Score','Time (sec)']];
+ list.forEach(a=>{ const d=new Date(a.submittedAt); rows.push([d.toLocaleDateString('en-CA'),d.toLocaleTimeString('en-GB'),a.bookTitle,a.chapterTitle||'',a.title,a.practice?'practice':'standard',a.questionCount,a.results.correct,a.results.incorrect,a.results.unanswered,(Math.round(a.results.accuracy*10)/10),(Math.round(a.results.completion*10)/10),a.results.score,a.results.maxScore,a.timeSpent]); });
+ const csv=rows.map(r=>r.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ downloadFile('test_history_'+dayKey(Date.now())+'.csv','\ufeff'+csv,'text/csv'); toast(t('saved')); }
+
+// ---------------- Statistics ----------------
+let SP={period:'7d',from:'',to:''};
+function periodRange(){ const now=Date.now(); const d=new Date();
+ switch(SP.period){
+  case 'today':{ const s=startOfDay(now); return {start:s,end:now,gran:'hour'}; }
+  case '7d':{ const s=startOfDay(now-6*86400000); return {start:s,end:now,gran:'day'}; }
+  case 'month':{ const s=new Date(d.getFullYear(),d.getMonth(),1).getTime(); return {start:s,end:now,gran:'day'}; }
+  case '30d':{ const s=startOfDay(now-29*86400000); return {start:s,end:now,gran:'day'}; }
+  case 'year':{ const s=new Date(d.getFullYear(),0,1).getTime(); return {start:s,end:now,gran:'month'}; }
+  case '12m':{ const s=new Date(d.getFullYear(),d.getMonth()-11,1).getTime(); return {start:s,end:now,gran:'month'}; }
+  case 'custom':{ const s=SP.from?new Date(SP.from+'T00:00:00').getTime():startOfDay(now-6*86400000); const e=SP.to?new Date(SP.to+'T23:59:59').getTime():now; const days=(e-s)/86400000; return {start:s,end:e,gran:days>62?'month':'day'}; }
+ } return {start:startOfDay(now-6*86400000),end:now,gran:'day'}; }
+function renderStats(){ const v=$('#view'); const range=periodRange();
+ const cur=D.attempts.filter(a=>a.submittedAt>=range.start&&a.submittedAt<=range.end);
+ const len=range.end-range.start; const prev=D.attempts.filter(a=>a.submittedAt>=range.start-len&&a.submittedAt<range.start);
+ const g=aggregate(cur), pg=aggregate(prev);
+ const periods=[['today',t('today')],['7d',t('last7')],['month',t('thisMonth')],['30d',t('last30')],['year',t('thisYear')],['12m',t('last12')],['custom',t('custom')]];
+ // buckets
+ const buckets=[]; const loc=LANG==='fa'?'fa-IR':'en-US';
+ if(range.gran==='hour'){ for(let h=0;h<24;h++){ const s=range.start+h*3600000; buckets.push({label:dnum(h),start:s,end:s+3600000}); } }
+ else if(range.gran==='day'){ let d=new Date(range.start); while(d.getTime()<=range.end){ const s=d.getTime(); const nd=new Date(d); nd.setDate(nd.getDate()+1); buckets.push({label:new Intl.DateTimeFormat(loc,{month:'numeric',day:'numeric'}).format(d),start:s,end:Math.min(nd.getTime(),range.end+1)}); d=nd; } }
+ else { let d=new Date(range.start); d.setDate(1); while(d.getTime()<=range.end){ const s=d.getTime(); const nd=new Date(d); nd.setMonth(nd.getMonth()+1); buckets.push({label:new Intl.DateTimeFormat(loc,{month:'short',year:range.gran==='month'&&buckets.length>11?'numeric':undefined}).format(d),start:s,end:Math.min(nd.getTime(),range.end+1)}); d=nd; } }
+ const bQ=buckets.map(b=>aggregate(cur.filter(a=>a.submittedAt>=b.start&&a.submittedAt<b.end)).answered);
+ const bA=buckets.map(b=>{ const x=aggregate(cur.filter(a=>a.submittedAt>=b.start&&a.submittedAt<b.end)); return x.answered?+x.accuracy.toFixed(1):null; });
+ // books & chapters
+ const bookMap={}; cur.forEach(a=>{ if(a.bookId){ (bookMap[a.bookId]=bookMap[a.bookId]||[]).push(a); } });
+ const bookRows=Object.entries(bookMap).map(([bid,l])=>({b:findBook(bid),g:aggregate(l)})).filter(x=>x.b).sort((x,y)=>y.g.answered-x.g.answered);
+ const chAgg=chapterAgg(cur);
+ const chRows=Object.entries(chAgg).map(([cid,x])=>{ const n=chapterName(cid); const ans=x.correct+x.incorrect; return {cid,name:n?n.name:t('unknownChapter'),book:n?n.book:'—',x,ans,acc:ans?x.correct/ans*100:0,err:ans?x.incorrect/ans*100:0}; }).filter(r=>r.ans>=5);
+ const strong=[...chRows].sort((a,b)=>b.acc-a.acc).slice(0,5); const weak=[...chRows].sort((a,b)=>b.err-a.err).slice(0,5);
+ const delta=(c,p,suf='%')=>{ if(!p) return `<span class="text-xs font-bold text-slate-400">—</span>`; const diff=c-p; const up=diff>=0; return `<span class="text-xs font-bold ${up?'text-emerald-500':'text-rose-500'}">${up?'▲':'▼'} ${dnum(Math.abs(Math.round(diff*10)/10))}${suf}</span>`; };
+ v.innerHTML=`<div class="max-w-7xl mx-auto space-y-5">
+ <div class="card p-4 anim no-print"><div class="flex flex-wrap items-center gap-2">
+  ${periods.map(p=>`<button class="chip ${SP.period===p[0]?'bg-indigo-600 text-white border-indigo-600':'bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-indigo-400'}" onclick="SP.period='${p[0]}';route()">${p[1]}</button>`).join('')}
+  ${SP.period==='custom'?`<input type="date" class="input !w-auto !py-1.5" value="${SP.from}" onchange="SP.from=this.value;route()"><input type="date" class="input !w-auto !py-1.5" value="${SP.to}" onchange="SP.to=this.value;route()">`:''}
+  <div class="flex-1"></div>
+  <button class="btn btn-ghost !py-2" onclick="window.print()">${icon('printer','w-4 h-4')}${t('printReport')}</button>
+ </div></div>
+ <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  ${statCard('check',t('testsCompleted'),dnum(g.tests),t('vsPrev')+' '+delta(g.tests,pg.tests,''),'#6366f1')}
+  ${statCard('doc',t('questionsAnswered'),dnum(g.answered),t('vsPrev')+' '+delta(g.answered,pg.answered,''),'#06b6d4')}
+  ${statCard('target',t('accuracy'),pct(g.accuracy),t('vsPrev')+' '+delta(g.accuracy,pg.accuracy,''),'#10b981')}
+  ${statCard('chart',t('avgScore'),fmtScore(g.avgScore),fmtDur(g.time)+' '+t('studyTime'),'#f59e0b')}
+ </div>
+ <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  <div class="card p-4 anim text-center"><div class="text-xl font-extrabold text-emerald-500">${dnum(g.correct)}</div><div class="text-xs font-bold text-slate-400">${t('correct')}</div></div>
+  <div class="card p-4 anim text-center"><div class="text-xl font-extrabold text-rose-500">${dnum(g.incorrect)}</div><div class="text-xs font-bold text-slate-400">${t('incorrect')}</div></div>
+  <div class="card p-4 anim text-center"><div class="text-xl font-extrabold text-slate-400">${dnum(g.unanswered)}</div><div class="text-xs font-bold text-slate-400">${t('unanswered')}</div></div>
+  <div class="card p-4 anim text-center"><div class="text-xl font-extrabold text-indigo-500">${pct(g.completion,0)}</div><div class="text-xs font-bold text-slate-400">${t('completion')}</div></div>
+ </div>
+ <div class="card p-6 anim"><b class="block mb-4">${range.gran==='hour'?t('hourly'):t('performanceTrend')}</b>${g.answered?`<div class="h-72"><canvas id="stMain"></canvas></div>`:`<p class="text-sm text-slate-400 text-center py-16">${t('noDataRange')}</p>`}</div>
+ <div class="grid lg:grid-cols-2 gap-4">
+  <div class="card p-6 anim"><b class="block mb-4">${t('performanceByBook')}</b>${bookRows.length?`<div class="space-y-3">${bookRows.slice(0,6).map(r=>`<div><div class="flex justify-between text-sm mb-1"><span class="font-bold truncate">${esc(r.b.title)}</span><span class="text-xs text-slate-400 font-bold whitespace-nowrap">${dnum(r.g.answered)} ${t('answeredCol').toLowerCase()} • ${pct(r.g.accuracy,0)}</span></div>${bar(r.g.accuracy,'linear-gradient(90deg,#6366f1,#06b6d4)')}</div>`).join('')}</div>`:`<p class="text-sm text-slate-400 text-center py-10">${t('noDataRange')}</p>`}</div>
+  <div class="card p-6 anim"><b class="block mb-1">${t('strongWeak')}</b><p class="text-xs text-slate-400 mb-4">${t('minAnsweredNote')}</p>
+   ${chRows.length?`<div class="grid grid-cols-2 gap-4">
+    <div><div class="text-xs font-extrabold text-emerald-500 mb-2">${t('strongest')}</div>${strong.map(r=>`<div class="flex justify-between items-center py-1.5 text-sm"><span class="truncate font-semibold">${esc(r.name)}</span><span class="badge bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">${pct(r.acc,0)}</span></div>`).join('')}</div>
+    <div><div class="text-xs font-extrabold text-rose-500 mb-2">${t('weakest')}</div>${weak.map(r=>`<div class="flex justify-between items-center py-1.5 text-sm"><span class="truncate font-semibold">${esc(r.name)}</span><span class="badge bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400">${pct(r.acc,0)}</span></div>`).join('')}</div>
+   </div>`:`<p class="text-sm text-slate-400 text-center py-10">${t('noChapterData')}</p>`}
+  </div>
+ </div></div>`;
+ if(g.answered){ const dark=document.documentElement.classList.contains('dark'); const gridC=dark?'rgba(148,163,184,.12)':'rgba(100,116,139,.12)'; const tickC=dark?'#94a3b8':'#64748b';
+  makeChart('stMain',{data:{labels:buckets.map(b=>b.label),datasets:[{type:'bar',label:t('questionsBar'),data:bQ,backgroundColor:'rgba(99,102,241,.75)',borderRadius:6,yAxisID:'y',maxBarThickness:30},{type:'line',label:t('accLine'),data:bA,borderColor:'#10b981',backgroundColor:'#10b981',tension:.35,spanGaps:true,yAxisID:'y1',pointRadius:2.5,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickC,boxWidth:12}}},scales:{y:{beginAtZero:true,grid:{color:gridC},ticks:{color:tickC,precision:0}},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{color:tickC}},x:{grid:{display:false},ticks:{color:tickC,maxTicksLimit:14}}}}}); } }
+
+// ---------------- Weakness Analysis ----------------
+function renderAnalysis(){ const v=$('#view'); const list=D.attempts;
+ if(!list.length){ v.innerHTML=`<div class="max-w-3xl mx-auto mt-6">${emptyState('pulse',t('analysis'),t('notEnoughData'),`<button class="btn btn-primary" onclick="nav('/sheets')">${icon('play','w-4 h-4')}${t('startNewTest')}</button>`)}</div>`; return; }
+ const chAgg=chapterAgg(list);
+ const chRows=Object.entries(chAgg).map(([cid,x])=>{ const n=chapterName(cid); const ans=x.correct+x.incorrect; return {cid,name:n?n.name:t('unknownChapter'),book:n?n.book:'—',subject:n?(n.subject||''):'',x,ans,err:ans?x.incorrect/ans*100:0}; }).filter(r=>r.ans>0);
+ const weak=[...chRows].filter(r=>r.ans>=3).sort((a,b)=>b.err-a.err).slice(0,6);
+ // missed questions
+ const missed={};
+ list.forEach(a=>{ const det=a.detail||{}; for(const q in det){ if(det[q]!=='incorrect') continue; const k=(a.testId||'p')+':'+q; (missed[k]=missed[k]||{n:0,test:a.title,book:a.bookTitle,q,corr:(a.keySnapshot||{})[q],tid:a.testId}).n++; } });
+ const missedRows=Object.values(missed).sort((a,b)=>b.n-a.n).slice(0,8);
+ // subjects
+ const subMap={}; list.forEach(a=>{ const b=findBook(a.bookId); if(!b||!b.subject) return; (subMap[b.subject]=subMap[b.subject]||[]).push(a); });
+ const subRows=Object.entries(subMap).map(([s,l])=>({s,g:aggregate(l)})).sort((a,b)=>a.g.accuracy-b.g.accuracy);
+ // trend: first half vs second half by time
+ const sorted=[...list].sort((a,b)=>a.submittedAt-b.submittedAt); const half=Math.floor(sorted.length/2);
+ const g1=aggregate(sorted.slice(0,half||1)), g2=aggregate(sorted.slice(half||1));
+ const trendDiff=sorted.length>=4?g2.accuracy-g1.accuracy:0;
+ const trendLabel=sorted.length<4?t('stable'):trendDiff>3?t('improving'):trendDiff<-3?t('declining'):t('stable');
+ const trendColor=trendLabel===t('improving')?'text-emerald-500':trendLabel===t('declining')?'text-rose-500':'text-slate-400';
+ v.innerHTML=`<div class="max-w-6xl mx-auto space-y-5">
+ <div class="card p-6 anim flex flex-wrap items-center gap-5">
+  <div class="w-12 h-12 rounded-2xl bg-fuchsia-100 dark:bg-fuchsia-500/15 text-fuchsia-500 flex items-center justify-center">${icon('pulse','w-6 h-6')}</div>
+  <div class="flex-1 min-w-[200px]"><h1 class="text-xl font-extrabold">${t('analysis')}</h1><p class="text-sm text-slate-400">${t('basedOnErrors')}</p></div>
+  <div class="text-center px-4"><div class="text-xs font-bold text-slate-400 uppercase">${t('trend')}</div><div class="text-lg font-extrabold ${trendColor}">${trendLabel}</div></div>
+  <button class="btn btn-primary no-print" onclick="buildMistakePractice()">${icon('play','w-4 h-4')}${t('practiceFromMistakes')}</button>
+ </div>
+ <div class="grid lg:grid-cols-2 gap-4">
+  <div class="card p-6 anim"><b class="block mb-4">${t('weakChapters')}</b>
+   ${weak.length?`<div class="space-y-3">${weak.map(r=>`<div><div class="flex justify-between text-sm mb-1"><span class="font-bold truncate">${esc(r.name)} <span class="text-xs text-slate-400 font-semibold">• ${esc(r.book)}</span></span><span class="text-xs font-extrabold text-rose-500 whitespace-nowrap">${t('errorRate')} ${pct(r.err,0)}</span></div>${bar(r.err,'linear-gradient(90deg,#f43f5e,#fb923c)')}<div class="text-[11px] text-slate-400 mt-0.5">${dnum(r.x.incorrect)} ${t('incorrect').toLowerCase()} / ${dnum(r.ans)} ${t('answeredCol').toLowerCase()}</div></div>`).join('')}</div>`:`<p class="text-sm text-slate-400 text-center py-8">${t('noChapterData')}</p>`}
+  </div>
+  <div class="card p-6 anim"><b class="block mb-4">${t('missedQuestions')}</b>
+   ${missedRows.length?`<div class="space-y-2">${missedRows.map(m=>`<div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50"><span class="badge bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">Q${dnum(m.q)}</span><div class="flex-1 min-w-0"><div class="text-sm font-bold truncate">${esc(m.test)}</div><div class="text-xs text-slate-400 truncate">${esc(m.book)}</div></div><span class="text-xs font-bold text-slate-400 whitespace-nowrap">${t('correctAnswer')}: <b class="text-emerald-500">${m.corr||'—'}</b></span><span class="badge bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300">×${dnum(m.n)}</span></div>`).join('')}</div>`:`<p class="text-sm text-slate-400 text-center py-8">${t('noMistakes')}</p>`}
+  </div>
+ </div>
+ <div class="grid lg:grid-cols-2 gap-4">
+  <div class="card p-6 anim"><b class="block mb-4">${t('subjectFocus')}</b>
+   ${subRows.length?`<div class="space-y-3">${subRows.map(r=>`<div class="flex items-center gap-3"><span class="w-28 truncate text-sm font-bold">${esc(r.s)}</span><div class="flex-1">${bar(r.g.accuracy,r.g.accuracy>=80?'#10b981':r.g.accuracy>=60?'#f59e0b':'#f43f5e')}</div><span class="text-xs font-extrabold ${accColor(r.g.accuracy)} w-14 text-end">${pct(r.g.accuracy,0)}</span></div>`).join('')}</div>`:`<p class="text-sm text-slate-400 text-center py-8">${t('noDataRange')}</p>`}
+  </div>
+  <div class="card p-6 anim"><b class="block mb-4">${t('recommendations')}</b>
+   ${weak.length?`<div class="space-y-2.5">${weak.slice(0,3).map((r,i)=>`<div class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700"><span class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/15 text-indigo-500 flex items-center justify-center font-extrabold text-sm">${dnum(i+1)}</span><div class="flex-1 min-w-0"><div class="text-sm font-bold truncate">${esc(r.name)}</div><div class="text-xs text-slate-400 truncate">${esc(r.book)}${r.subject?' • '+esc(r.subject):''}</div></div><span class="badge bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">${pct(r.err,0)}</span></div>`).join('')}</div>
+   <p class="text-xs text-slate-400 mt-4">${t('recommendedNext')} — ${t('basedOnErrors')}.</p>`:`<p class="text-sm text-slate-400 text-center py-8">${t('noMistakes')}</p>`}
+  </div>
+ </div></div>`; }
+function buildMistakePractice(){ const seen={}; const items=[];
+ for(const a of D.attempts){ const det=a.detail||{};
+  for(const q in det){ const k=(a.testId||'p')+':'+q; if(seen[k]) continue; seen[k]=true;
+   if(det[q]==='correct') continue;
+   let key,exp,opts=a.optionsCount||4,ref;
+   if(a.practice){ const it=(a.items||[])[+q-1]; if(!it) continue; key=it.key; exp=it.explanation; opts=it.optionsCount||4; ref=it.ref; }
+   else { const f=findTest(a.testId); key=f?(f.test.key||{})[q]:(a.keySnapshot||{})[q]; exp=f?(f.test.explanations||{})[q]:(a.explanationsSnapshot||{})[q]; if(f) opts=f.test.optionsCount; ref=a.bookTitle+' • '+a.title+' • Q'+q; }
+   if(!key) continue;
+   items.push({testId:a.testId,qNum:+q,key,explanation:exp,optionsCount:opts,ref,chapterId:(a.qChapters||{})[q]||a.chapterId});
+   if(items.length>=50) break; }
+  if(items.length>=50) break; }
+ if(!items.length) return toast(t('noMistakes'),'info');
+ window._practiceItems=items; nav('/practice'); toast(t('practiceBuilt'),'info'); }
+
+// ---------------- Settings ----------------
+function renderSettings(){ const v=$('#view'); const st=getSettings();
+ v.innerHTML=`<div class="max-w-3xl mx-auto space-y-5">
+ <div class="card p-6 anim">
+  <h3 class="font-extrabold mb-4 flex items-center gap-2">${icon('user','w-5 h-5')}${t('profile')}</h3>
+  <div class="grid sm:grid-cols-2 gap-4">
+   <div><label class="label">${t('fullName')}</label><input id="stName" class="input" value="${esc(U.name)}"></div>
+   <div><label class="label">${t('email')}</label><input class="input opacity-60" value="${esc(U.email)}" disabled dir="ltr"></div>
+  </div>
+  <div class="flex justify-end mt-4"><button class="btn btn-primary" id="stSaveProfile">${t('save')}</button></div>
+  <div class="border-t border-slate-100 dark:border-slate-700 mt-5 pt-5">
+   <h4 class="font-bold text-sm mb-3">${t('changePassword')}</h4>
+   <div class="grid sm:grid-cols-3 gap-4">
+    <div><label class="label">${t('currentPassword')}</label><input id="stCurP" type="password" class="input" dir="ltr"></div>
+    <div><label class="label">${t('newPassword')}</label><input id="stNewP" type="password" class="input" dir="ltr"></div>
+    <div><label class="label">${t('confirmPassword')}</label><input id="stNewP2" type="password" class="input" dir="ltr"></div>
+   </div>
+   <div class="flex justify-end mt-4"><button class="btn btn-ghost" id="stPassBtn">${t('changePassword')}</button></div>
+  </div>
+ </div>
+ <div class="card p-6 anim">
+  <h3 class="font-extrabold mb-1 flex items-center gap-2">${icon('sun','w-5 h-5')}${t('appearance')}</h3>
+  <p class="text-xs text-slate-400 mb-4">${t('prefTheme')}</p>
+  <div class="grid sm:grid-cols-2 gap-4">
+   <div><label class="label">${t('theme')}</label><div class="flex gap-2"><button class="chip flex-1 ${st.theme!=='dark'?'bg-indigo-600 text-white border-indigo-600':'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-600 text-slate-500'}" onclick="setTheme('light')">${t('light')}</button><button class="chip flex-1 ${st.theme==='dark'?'bg-indigo-600 text-white border-indigo-600':'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-600 text-slate-500'}" onclick="setTheme('dark')">${t('dark')}</button></div></div>
+   <div><label class="label">${t('language')}</label><div class="flex gap-2"><button class="chip flex-1 ${LANG==='en'?'bg-indigo-600 text-white border-indigo-600':'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-600 text-slate-500'}" onclick="setLang('en')">English</button><button class="chip flex-1 ${LANG==='fa'?'bg-indigo-600 text-white border-indigo-600':'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-600 text-slate-500'}" onclick="setLang('fa')">فارسی</button></div></div>
+  </div>
+  <div class="border-t border-slate-100 dark:border-slate-700 mt-5 pt-5">
+   <h4 class="font-bold text-sm mb-3">${t('defaults')}</h4>
+   <div class="grid sm:grid-cols-2 gap-4 items-end">
+    <label class="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 cursor-pointer text-sm font-bold"><input type="checkbox" id="stNegD" class="w-4 h-4 accent-indigo-600" ${st.negDefault?'checked':''}>${t('enableNeg')}</label>
+    <div><label class="label">${t('penalty')}</label><input id="stPenD" type="number" step="0.05" min="0" class="input" value="${st.penaltyDefault||0.25}"></div>
+   </div>
+   <div class="flex justify-end mt-4"><button class="btn btn-primary" id="stDefBtn">${t('save')}</button></div>
+  </div>
+ </div>
+ <div class="card p-6 anim">
+  <h3 class="font-extrabold mb-4 flex items-center gap-2">${icon('layers','w-5 h-5')}${t('dataMgmt')}</h3>
+  <div class="flex flex-wrap gap-2">
+   <button class="btn btn-ghost" id="stExport">${icon('download','w-4 h-4')}${t('exportAll')}</button>
+   <label class="btn btn-ghost cursor-pointer">${icon('upload','w-4 h-4')}${t('importAll')}<input type="file" id="stImport" accept=".json" class="hidden"></label>
+   <button class="btn btn-ghost hover:!text-rose-500" id="stClear">${icon('trash','w-4 h-4')}${t('clearAll')}</button>
+  </div>
+  <div class="border-t border-slate-100 dark:border-slate-700 mt-5 pt-5">
+   <button class="btn btn-danger" id="stDelAcc">${icon('trash','w-4 h-4')}${t('deleteAccount')}</button>
+  </div>
+ </div></div>`;
+ $('#stSaveProfile').onclick=()=>{ const n=$('#stName').value.trim(); if(!n) return toast(t('fillAll'),'error'); U.name=n; saveUsers(); toast(t('profileUpdated')); renderSidebar(); };
+ $('#stPassBtn').onclick=async()=>{ const cur=$('#stCurP').value,p1=$('#stNewP').value,p2=$('#stNewP2').value; if(!cur||!p1) return toast(t('fillAll'),'error'); if(p1.length<6) return toast(t('passShort'),'error'); if(p1!==p2) return toast(t('passMismatch'),'error');
+  if(await hash(cur)!==U.pass) return toast(t('wrongPassword'),'error'); U.pass=await hash(p1); saveUsers(); toast(t('passwordChanged')); route(); };
+ $('#stDefBtn').onclick=()=>{ st.negDefault=$('#stNegD').checked; st.penaltyDefault=+$('#stPenD').value||0; saveUsers(); toast(t('saved')); };
+ $('#stExport').onclick=()=>{ downloadFile('answersheet_backup_'+dayKey(Date.now())+'.json',JSON.stringify({app:'answersheet-pro',type:'full',user:{name:U.name,email:U.email},data:D},null,1),'application/json'); };
+ $('#stImport').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=async()=>{ try{ const obj=JSON.parse(r.result); const data=obj.data||obj; if(!Array.isArray(data.books)||!Array.isArray(data.attempts)) throw 0;
+   if(!await confirmDialog(t('importAll'),t('areYouSure')+' '+t('thisAction'),t('import'),false)) return;
+   D={books:data.books,attempts:data.attempts,drafts:data.drafts||{}}; saveData(); toast(t('dataImported')); route(); }catch(err){ toast(t('importErr'),'error'); } }; r.readAsText(f); };
+ $('#stClear').onclick=async()=>{ if(!await confirmDialog(t('areYouSure'),t('confirmClearAll'),t('yesClear'))) return; D={books:[],attempts:[],drafts:{}}; saveData(); toast(t('deleted'),'info'); nav('/dashboard'); route(); };
+ $('#stDelAcc').onclick=async()=>{ if(!await confirmDialog(t('areYouSure'),t('confirmDelAccount'),t('yesDelete'))) return; const users=DB.read('das_users',{}); delete users[U.id]; DB.write('das_users',users); DB.remove('das_data_'+U.id); logout(); }; }
+function setTheme(th){ const st=getSettings(); st.theme=th; saveUsers(); applyTheme(th); renderTopbar(); route(); }
+function setLang(l){ const st=getSettings(); st.lang=l; LANG=l; saveUsers(); applyLang(); renderSidebar(); renderTopbar(); route(); }
+
+// ---------------- Print blank sheet ----------------
+function printBlankSheet(tid){ const f=findTest(tid); if(!f) return; const letters=LETTERS(f.test.optionsCount||4);
+ let rows=''; for(let i=1;i<=f.test.questionCount;i++){ rows+=`<div class="bs-row"><b>${i}</b><span>${letters.map(l=>`<span class="bs-b">${l}</span>`).join('')}</span></div>`; }
+ $('#printArea').innerHTML=`<div style="font-family:Inter,sans-serif;padding:10px">
+ <h1 style="font-size:20px;font-weight:800;margin-bottom:4px">${esc(f.book.title)} — ${esc(f.test.title)}</h1>
+ <p style="font-size:12px;color:#444">${esc(f.chapter.title)} • ${f.test.questionCount} ${t('questionsL')}</p>
+ <div style="display:flex;gap:30px;margin-top:12px;font-size:13px"><span>${t('blankSheetName')}: ____________________</span><span>${t('blankSheetDate')}: ____________</span><span>${t('blankSheetGrade')}: ____________</span></div>
+ <div class="bs-grid">${rows}</div></div>`;
+ document.body.classList.add('print-blank'); window.print(); }
+window.addEventListener('afterprint',()=>document.body.classList.remove('print-blank'));
+
+// ---------------- Init ----------------
+(function init(){ const prefs=DB.read('das_prefs',{theme:'light',lang:'en'}); LANG=prefs.lang||'en'; applyLang(); applyTheme(prefs.theme);
+ const sid=DB.read('das_session',null); const users=DB.read('das_users',{});
+ if(sid&&users[sid]){ U=users[sid]; initApp(); } else showAuth(); })();
+</script>
+</body>
+</html>
